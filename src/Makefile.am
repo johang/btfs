@@ -1,0 +1,4 @@
+bin_PROGRAMS = btfs
+btfs_SOURCES = btfs.cc btfs.h
+btfs_CPPFLAGS = -Wall $(FUSE_CFLAGS) $(LIBTORRENT_CFLAGS)
+btfs_LDADD = $(FUSE_LIBS) $(LIBTORRENT_LIBS)
