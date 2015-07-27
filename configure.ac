@@ -8,8 +8,8 @@ AM_INIT_AUTOMAKE
 AC_PROG_CXX
 
 # Checks for libraries.
-PKG_CHECK_MODULES(FUSE, fuse >= 2.9.2)
-PKG_CHECK_MODULES(LIBTORRENT, libtorrent-rasterbar >= 0.16.18)
+PKG_CHECK_MODULES(FUSE, fuse >= 2.8.0)
+PKG_CHECK_MODULES(LIBTORRENT, libtorrent-rasterbar >= 0.16.0)
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_OFF_T
