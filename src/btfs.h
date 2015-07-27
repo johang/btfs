@@ -22,9 +22,6 @@ along with BTFS.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <libtorrent/peer_request.hpp>
 
-#define BTFS_VERSION_MAJOR 1
-#define BTFS_VERSION_MINOR 0
-
 namespace btfs
 {
 
