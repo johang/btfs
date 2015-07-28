@@ -67,6 +67,18 @@ private:
 	std::vector<Part> parts;
 };
 
+enum {
+	KEY_VERSION,
+	KEY_HELP,
+};
+
+struct btfs_params {
+	int version;
+	int help;
+	int browse_only;
+	const char *metadata;
+};
+
 }
 
 #endif

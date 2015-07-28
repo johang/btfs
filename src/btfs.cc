@@ -57,6 +57,8 @@ std::map<std::string,std::set<std::string> > dirs;
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t signal = PTHREAD_COND_INITIALIZER;
 
+static struct btfs_params params;
+
 static bool
 move_to_next_unfinished(int& piece) {
 	for (; piece < handle.get_torrent_info().num_pieces(); piece++) {
@@ -173,6 +175,9 @@ setup() {
 	handle.set_upload_limit(5 * 1024 * 1024 / 8);
 
 	libtorrent::torrent_info ti = handle.get_torrent_info();
+
+	if (params.browse_only)
+		handle.pause();
 
 	for (int i = 0; i < ti.num_files(); ++i) {
 		// Initially, don't download anything
@@ -395,6 +400,9 @@ btfs_read(const char *path, char *buf, size_t size, off_t offset,
 	if (is_dir(path))
 		return -EISDIR;
 
+	if (params.browse_only)
+		return -EACCES;
+
 	pthread_mutex_lock(&lock);
 
 	Read *r = new Read(buf, files[path].second, offset, std::min(
@@ -517,7 +525,7 @@ populate_target(libtorrent::add_torrent_params& p, char *arg) {
 }
 
 static bool
-populate_metadata(libtorrent::add_torrent_params& p, char *arg) {
+populate_metadata(libtorrent::add_torrent_params& p, const char *arg) {
 	std::string uri(arg);
 
 	if (uri.find("http:") == 0 || uri.find("https:") == 0) {
@@ -548,45 +556,46 @@ populate_metadata(libtorrent::add_torrent_params& p, char *arg) {
 		if (ec)
 			RETV(fprintf(stderr, "Can't load metadata: %s\n",
 				ec.message().c_str()), false);
+
+		if (params.browse_only)
+			p.flags |= libtorrent::add_torrent_params::flag_paused;
 	}
 
 	return true;
 }
 
-int
-main(int argc, char *argv[]) {
-	if (argc < 3) {
-		printf("btfs [options] metadata.torrent mountpoint\n");
-		return -1;
+#define BTFS_OPT(t, p, v) { t, offsetof(struct btfs_params, p), v }
+
+static const struct fuse_opt btfs_opts[] = {
+	BTFS_OPT("-v",            version,     1),
+	BTFS_OPT("--version",     version,     1),
+	BTFS_OPT("-h",            help,        1),
+	BTFS_OPT("--help",        help,        1),
+	BTFS_OPT("-b",            browse_only, 1),
+	BTFS_OPT("--browse-only", browse_only, 1),
+	FUSE_OPT_END
+};
+
+static int
+btfs_process_arg(void *data, const char *arg, int key,
+		struct fuse_args *outargs) {
+	// Number of NONOPT options so far
+	static int n = 0;
+
+	struct btfs_params *params = (struct btfs_params *) data;
+
+	if (key == FUSE_OPT_KEY_NONOPT) {
+		if (n++ == 0)
+			params->metadata = arg;
+
+		return n <= 1 ? 0 : 1;
 	}
 
-	char *md = argv[argc - 2];
+	return 1;
+}
 
-	// Remove metadata parameter from argv
-	argv[argc - 2] = argv[argc - 1];
-	argv[argc - 1] = NULL;
-
-	argc--;
-
-	// TODO: --browse-only?
-	// TODO: --log FILE?
-	// TODO: --max-upload-rate BYTES?
-	// TODO: --max-download-rate BYTES?
-	// TODO: --target DIRECTORY?
-	// TODO: --auto-unmount-timeout SECONDS?
-
-	libtorrent::add_torrent_params p;
-
-	if (!populate_target(p, NULL))
-		return -1;
-
-	if (!populate_metadata(p, md))
-		return -1;
-
-	p.flags &= ~libtorrent::add_torrent_params::flag_auto_managed;
-	p.flags &= ~libtorrent::add_torrent_params::flag_paused;
-	//p.flags |= libtorrent::add_torrent_params::flag_paused;
-
+int
+main(int argc, char *argv[]) {
 	struct fuse_operations btfs_ops;
 	memset(&btfs_ops, 0, sizeof (btfs_ops));
 
@@ -597,7 +606,50 @@ main(int argc, char *argv[]) {
 	btfs_ops.init = btfs_init;
 	btfs_ops.destroy = btfs_destroy;
 
-	fuse_main(argc, argv, &btfs_ops, (void *) &p);
+	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
+
+	if (fuse_opt_parse(&args, &params, btfs_opts, btfs_process_arg)) {
+		fprintf(stderr, "Failed to parse options\n");
+		return -1;
+	}
+
+	if (!params.metadata)
+		params.help = 1;
+
+	if (params.version) {
+		// Print version
+		printf(PACKAGE " version: " VERSION "\n");
+
+		// Let FUSE print more versions
+		fuse_opt_add_arg(&args, "--version");
+		fuse_main(args.argc, args.argv, &btfs_ops, NULL);
+
+		return 0;
+	}
+
+	if (params.help) {
+		// Print usage
+		printf("usage: " PACKAGE " [options] metadata mountpoint\n\n");
+
+		// Let FUSE print more help
+		fuse_opt_add_arg(&args, "-ho");
+		fuse_main(args.argc, args.argv, &btfs_ops, NULL);
+
+		return 0;
+	}
+
+	libtorrent::add_torrent_params p;
+
+	p.flags &= ~libtorrent::add_torrent_params::flag_auto_managed;
+	p.flags &= ~libtorrent::add_torrent_params::flag_paused;
+
+	if (!populate_target(p, NULL))
+		return -1;
+
+	if (!populate_metadata(p, params.metadata))
+		return -1;
+
+	fuse_main(args.argc, args.argv, &btfs_ops, (void *) &p);
 
 	return 0;
 }
