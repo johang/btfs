@@ -67,6 +67,25 @@ private:
 	std::vector<Part> parts;
 };
 
+class Array
+{
+public:
+	Array() : buf(0), size(0) {
+	}
+
+	~Array() {
+		free(buf);
+	}
+
+	bool expand(int n) {
+		return (buf = (char *) realloc((void *) buf, size += n)) != NULL;
+	}
+
+	char *buf;
+
+	size_t size;
+};
+
 enum {
 	KEY_VERSION,
 	KEY_HELP,

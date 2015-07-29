@@ -34,6 +34,8 @@ along with BTFS.  If not, see <http://www.gnu.org/licenses/>.
 #include <libtorrent/alert_types.hpp>
 #include <libtorrent/magnet_uri.hpp>
 
+#include <curl/curl.h>
+
 #include "btfs.h"
 
 #define RETV(s, v) { s; return v; };
@@ -524,15 +526,56 @@ populate_target(libtorrent::add_torrent_params& p, char *arg) {
 	return p.save_path.length() > 0;
 }
 
+static size_t
+handle_http(void *contents, size_t size, size_t nmemb, void *userp) {
+	Array *output = (Array *) userp;
+
+	// Offset into buffer to write to
+	size_t off = output->size;
+
+	output->expand(nmemb * size);
+
+	memcpy(output->buf + off, contents, nmemb * size);
+
+	// Must return number of bytes copied
+	return nmemb * size;
+}
+
 static bool
 populate_metadata(libtorrent::add_torrent_params& p, const char *arg) {
 	std::string uri(arg);
 
 	if (uri.find("http:") == 0 || uri.find("https:") == 0) {
-		RETV(fprintf(stderr, "No HTTP or HTTPS support yet\n"), false);
-	}
+		Array output;
 
-	if (uri.find("magnet:") == 0) {
+		CURL *ch = curl_easy_init();
+
+		curl_easy_setopt(ch, CURLOPT_URL, uri.c_str());
+		curl_easy_setopt(ch, CURLOPT_WRITEFUNCTION, handle_http); 
+		curl_easy_setopt(ch, CURLOPT_WRITEDATA, (void *) &output); 
+		curl_easy_setopt(ch, CURLOPT_USERAGENT, "btfs/" VERSION);
+		curl_easy_setopt(ch, CURLOPT_FOLLOWLOCATION, 1);
+
+		CURLcode res = curl_easy_perform(ch);
+
+		if(res != CURLE_OK)
+			RETV(fprintf(stderr, "curl failed: %s\n",
+				curl_easy_strerror(res)), false);
+
+		curl_easy_cleanup(ch);
+
+		libtorrent::error_code ec;
+
+		p.ti = new libtorrent::torrent_info((const char *) output.buf,
+			output.size, ec);
+
+		if (ec)
+			RETV(fprintf(stderr, "Can't load metadata: %s\n",
+				ec.message().c_str()), false);
+
+		if (params.browse_only)
+			p.flags |= libtorrent::add_torrent_params::flag_paused;
+	} else if (uri.find("magnet:") == 0) {
 		libtorrent::error_code ec;
 
 		parse_magnet_uri(uri, p, ec);
@@ -646,10 +689,14 @@ main(int argc, char *argv[]) {
 	if (!populate_target(p, NULL))
 		return -1;
 
+	curl_global_init(CURL_GLOBAL_ALL);
+
 	if (!populate_metadata(p, params.metadata))
 		return -1;
 
 	fuse_main(args.argc, args.argv, &btfs_ops, (void *) &p);
+
+	curl_global_cleanup();
 
 	return 0;
 }
