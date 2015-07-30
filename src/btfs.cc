@@ -173,9 +173,6 @@ static void
 setup() {
 	printf("Got metadata. Now ready to start downloading.\n");
 
-	handle.set_download_limit(5 * 1024 * 1024 / 8);
-	handle.set_upload_limit(5 * 1024 * 1024 / 8);
-
 	libtorrent::torrent_info ti = handle.get_torrent_info();
 
 	if (params.browse_only)
