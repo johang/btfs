@@ -1,0 +1,44 @@
+#!/usr/bin/python
+# copyright 2015 johan gunnarsson <johan.gunnarsson@gmail.com>
+
+import sys, os, os.path, tempfile, subprocess, time, shutil
+
+def files(p, d):
+	fs = []
+	for dirpath, dnames, fnames in os.walk(os.path.join(p, d)):
+		for f in fnames:
+			fs.append(dirpath.split(os.sep) + [f])
+	return fs
+
+def is_media(x):
+	for z in x:
+		if z.lower() == "sample":
+			return False
+	for z in x:
+		for a in (".mp4", ".mkv", ".avi"):
+			if z.lower().endswith(a):
+				return True
+	return False
+
+d = tempfile.mkdtemp(prefix="btplay-")
+
+mountpoint = os.path.join(d, "mnt")
+playlist = os.path.join(d, "playlist.m3u")
+
+os.mkdir(mountpoint)
+
+subprocess.call(("btfs", sys.argv[1], mountpoint, ))
+
+with open(playlist, "w") as p:
+	while len(os.listdir(mountpoint)) <= 0:
+		time.sleep(0.25)
+
+	p.writelines(sorted([
+		"/%s\n" % os.path.join(*a)
+		for a in files(mountpoint, "")
+		if is_media(a)]))
+
+subprocess.call(("vlc", "--file-caching", "5000", playlist, ))
+subprocess.call(("fusermount", "-u", mountpoint, ))
+
+shutil.rmtree(d)
