@@ -19,10 +19,11 @@ To unmount and shutdown:
 
 * fuse ("fuse" in Debian/Ubuntu)
 * libtorrent ("libtorrent-rasterbar7" in Debian/Ubuntu)
+* libcurl ("libcurl3" in Debian/Ubuntu)
 
 ## Building from git on a recent Ubuntu
 
-    $ apt-get install autoconf automake libfuse-dev libtorrent-rasterbar-dev
+    $ apt-get install autoconf automake libfuse-dev libtorrent-rasterbar-dev libcurl4-openssl-dev
     $ git clone https://github.com/johang/btfs.git btfs
     $ cd btfs
     $ autoreconf -i
