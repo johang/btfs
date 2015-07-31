@@ -15,6 +15,12 @@ To unmount and shutdown:
 
     $ fusermount -u mnt
 
+## Installing on a recent Ubuntu (Wily, Vivid or Trusty)
+
+    $ sudo add-apt-repository ppa:johang/btfs
+    $ sudo apt-get update
+    $ sudo apt-get install btfs
+
 ## Dependencies
 
 * fuse ("fuse" in Debian/Ubuntu)
