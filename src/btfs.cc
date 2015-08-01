@@ -338,6 +338,9 @@ btfs_getattr(const char *path, struct stat *stbuf) {
 
 	memset(stbuf, 0, sizeof (*stbuf));
 
+	stbuf->st_uid = getuid();
+	stbuf->st_gid = getgid();
+
 	if (strcmp(path, "/") == 0 || is_dir(path)) {
 		stbuf->st_mode = S_IFDIR | 0755;
 	} else {
