@@ -31,18 +31,28 @@ playlist = os.path.join(d, "playlist.m3u")
 
 os.mkdir(mountpoint)
 
-subprocess.call(("btfs", sys.argv[1], mountpoint, ))
+ret = subprocess.call(("btfs", sys.argv[1], mountpoint, ))
 
-with open(playlist, "w") as p:
-	while len(os.listdir(mountpoint)) <= 0:
-		time.sleep(0.25)
+if ret == 0:
+	try:
+		with open(playlist, "w") as p:
+			while len(os.listdir(mountpoint)) <= 0:
+				time.sleep(0.25)
 
-	p.writelines(sorted([
-		"/%s\n" % os.path.join(*a)
-		for a in files(mountpoint, "")
-		if is_media(a)]))
+			p.writelines(sorted([
+				"/%s\n" % os.path.join(*a)
+				for a in files(mountpoint, "")
+				if is_media(a)]))
 
-subprocess.call(("vlc", "--file-caching", "5000", playlist, ))
-subprocess.call(("fusermount", "-u", mountpoint, ))
+		ret = subprocess.call(("vlc", "--file-caching", "5000",
+			playlist, ))
+	except KeyboardInterrupt:
+		ret = 1
+	except:
+		ret = 2
+	finally:
+		subprocess.call(("fusermount", "-u", mountpoint, ))
 
 shutil.rmtree(d)
+
+sys.exit(ret)
