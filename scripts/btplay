@@ -3,6 +3,10 @@
 
 import sys, os, os.path, tempfile, subprocess, time, shutil
 
+if len(sys.argv) < 2:
+	print >> sys.stderr, "usage: btplay URI"
+	sys.exit(1)
+
 def files(p, d):
 	fs = []
 	for dirpath, dnames, fnames in os.walk(os.path.join(p, d)):
