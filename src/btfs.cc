@@ -99,7 +99,9 @@ advance() {
 Read::Read(char *buf, int index, int offset, int size) {
 	libtorrent::torrent_info metadata = handle.get_torrent_info();
 
-	while (size > 0 && offset < metadata.file_at(index).size) {
+	libtorrent::file_entry file = metadata.file_at(index);
+
+	while (size > 0 && offset < file.size) {
 		libtorrent::peer_request part = metadata.map_file(index,
 			offset, size);
 
@@ -404,9 +406,7 @@ btfs_read(const char *path, char *buf, size_t size, off_t offset,
 
 	pthread_mutex_lock(&lock);
 
-	Read *r = new Read(buf, files[path].second, offset, std::min(
-		(libtorrent::size_type) size,
-		handle.get_torrent_info().file_at(files[path].second).size));
+	Read *r = new Read(buf, files[path].second, offset, size);
 
 	reads.push_back(r);
 
