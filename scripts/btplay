@@ -44,7 +44,7 @@ if ret == 0:
 				for a in files(mountpoint, "")
 				if is_media(a)]))
 
-		ret = subprocess.call(("vlc", "--file-caching", "5000",
+		ret = subprocess.call(("vlc", "--file-caching", "10000",
 			playlist, ))
 	except KeyboardInterrupt:
 		ret = 1
