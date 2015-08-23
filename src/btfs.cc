@@ -83,9 +83,6 @@ jump(int piece, int size) {
 	int pl = handle.get_torrent_info().piece_length();
 
 	for (int b = 0; b < 0x200000; b += pl) {
-		if (!move_to_next_unfinished(tail))
-			return;
-
 		handle.piece_priority(tail++, 7);
 	}
 
