@@ -53,7 +53,7 @@ std::list<Read*> reads;
 // First piece index of the current sliding window
 int cursor;
 
-std::map<std::string,std::pair<libtorrent::file_entry,int> > files;
+std::map<std::string,int> files;
 std::map<std::string,std::set<std::string> > dirs;
 
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
@@ -203,8 +203,7 @@ setup() {
 		free(p);
 
 		// Path <-> file index mapping
-		files["/" + ti.file_at(i).path] = std::make_pair(
-			ti.file_at(i), i);
+		files["/" + ti.file_at(i).path] = i;
 	}
 }
 
@@ -343,8 +342,11 @@ btfs_getattr(const char *path, struct stat *stbuf) {
 	if (strcmp(path, "/") == 0 || is_dir(path)) {
 		stbuf->st_mode = S_IFDIR | 0755;
 	} else {
+		libtorrent::file_entry file =
+			handle.get_torrent_info().file_at(files[path]);
+
 		stbuf->st_mode = S_IFREG | 0444;
-		stbuf->st_size = files[path].first.size;
+		stbuf->st_size = file.size;
 	}
 
 	pthread_mutex_unlock(&lock);
@@ -406,7 +408,7 @@ btfs_read(const char *path, char *buf, size_t size, off_t offset,
 
 	pthread_mutex_lock(&lock);
 
-	Read *r = new Read(buf, files[path].second, offset, size);
+	Read *r = new Read(buf, files[path], offset, size);
 
 	reads.push_back(r);
 
