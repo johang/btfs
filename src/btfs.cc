@@ -474,12 +474,14 @@ btfs_destroy(void *user_data) {
 	pthread_cancel(alert_thread);
 	pthread_join(alert_thread, NULL);
 
-	/**
-	 * Intentionally leaks "session" to make shutdown faster. The Session
-	 * class does tracker announces and graceful peer shutdown in the
-	 * destructor. We can live without that.
-	 */
-	//delete session;
+	std::string path = handle.save_path();
+
+	session->remove_torrent(handle,
+		params.keep ? 0 : libtorrent::session::delete_files);
+
+	delete session;
+
+	rmdir(path.c_str());
 
 	pthread_mutex_unlock(&lock);
 }
@@ -615,6 +617,8 @@ static const struct fuse_opt btfs_opts[] = {
 	BTFS_OPT("--help",        help,        1),
 	BTFS_OPT("-b",            browse_only, 1),
 	BTFS_OPT("--browse-only", browse_only, 1),
+	BTFS_OPT("-k",            keep,        1),
+	BTFS_OPT("--keep",        keep,        1),
 	FUSE_OPT_END
 };
 
@@ -677,6 +681,7 @@ main(int argc, char *argv[]) {
 		printf("    --version -v           show version information\n");
 		printf("    --help -h              show this message\n");
 		printf("    --browse-only -b       download metadata only\n");
+		printf("    --keep -k              keep files after unmount\n");
 		printf("\n");
 
 		// Let FUSE print more help

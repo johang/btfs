@@ -95,6 +95,7 @@ struct btfs_params {
 	int version;
 	int help;
 	int browse_only;
+	int keep;
 	const char *metadata;
 };
 
