@@ -1,5 +1,5 @@
 AC_PREREQ([2.69])
-AC_INIT(btfs, 2.2, johan.gunnarsson@gmail.com)
+AC_INIT(btfs, 2.3, johan.gunnarsson@gmail.com)
 AC_CONFIG_SRCDIR([src/btfs.cc])
 
 AM_INIT_AUTOMAKE
