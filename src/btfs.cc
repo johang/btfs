@@ -57,7 +57,7 @@ std::map<std::string,int> files;
 std::map<std::string,std::set<std::string> > dirs;
 
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t signal = PTHREAD_COND_INITIALIZER;
+pthread_cond_t signal_cond = PTHREAD_COND_INITIALIZER;
 
 static struct btfs_params params;
 
@@ -163,7 +163,7 @@ int Read::read() {
 
 	while (!finished())
 		// Wait for any piece to downloaded
-		pthread_cond_wait(&signal, &lock);
+		pthread_cond_wait(&signal_cond, &lock);
 
 	return size();
 }
@@ -220,7 +220,7 @@ handle_read_piece_alert(libtorrent::read_piece_alert *a) {
 	pthread_mutex_unlock(&lock);
 
 	// Wake up all threads waiting for download
-	pthread_cond_broadcast(&signal);
+	pthread_cond_broadcast(&signal_cond);
 }
 
 static void
@@ -451,7 +451,10 @@ btfs_init(struct fuse_conn_info *conn) {
 		alerts);
 
 	pthread_create(&alert_thread, NULL, alert_queue_loop, NULL);
+
+#ifndef __APPLE__
 	pthread_setname_np(alert_thread, "alert");
+#endif
 
 	libtorrent::session_settings se = session->settings();
 
