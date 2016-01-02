@@ -654,10 +654,8 @@ main(int argc, char *argv[]) {
 
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 
-	if (fuse_opt_parse(&args, &params, btfs_opts, btfs_process_arg)) {
-		fprintf(stderr, "Failed to parse options\n");
-		return -1;
-	}
+	if (fuse_opt_parse(&args, &params, btfs_opts, btfs_process_arg))
+		RETV(fprintf(stderr, "Failed to parse options\n"), -1);
 
 	if (!params.metadata)
 		params.help = 1;
