@@ -15,23 +15,27 @@ To unmount and shutdown:
 
     $ fusermount -u mnt
 
-## Installing on a recent Ubuntu (Wily, Vivid or Trusty)
+## Installing on a recent Ubuntu (Xenial, Wily, Vivid or Trusty)
 
     $ sudo add-apt-repository ppa:johang/btfs
     $ sudo apt-get update
     $ sudo apt-get install btfs
 
-## Dependencies
+## Dependencies (on Linux)
 
 * fuse ("fuse" in Debian/Ubuntu)
 * libtorrent ("libtorrent-rasterbar7" in Debian/Ubuntu)
 * libcurl ("libcurl3" in Debian/Ubuntu)
 
-## Building from git on a recent Ubuntu
+## Building from git on a recent Debian/Ubuntu
 
-    $ apt-get install autoconf automake libfuse-dev libtorrent-rasterbar-dev libcurl4-openssl-dev
+    $ sudo apt-get install autoconf automake libfuse-dev libtorrent-rasterbar-dev libcurl4-openssl-dev
     $ git clone https://github.com/johang/btfs.git btfs
     $ cd btfs
     $ autoreconf -i
     $ ./configure
     $ make
+
+And optionally, if you want to install it:
+
+    $ sudo make install
