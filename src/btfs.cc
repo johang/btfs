@@ -271,6 +271,37 @@ handle_metadata_received_alert(libtorrent::metadata_received_alert *a) {
 	pthread_mutex_unlock(&lock);
 }
 
+static void
+handle_alert(libtorrent::alert *a) {
+	switch (a->type()) {
+	case libtorrent::read_piece_alert::alert_type:
+		handle_read_piece_alert(
+			(libtorrent::read_piece_alert *) a);
+		break;
+	case libtorrent::piece_finished_alert::alert_type:
+		handle_piece_finished_alert(
+			(libtorrent::piece_finished_alert *) a);
+		break;
+	case libtorrent::metadata_failed_alert::alert_type:
+		handle_metadata_failed_alert(
+			(libtorrent::metadata_failed_alert *) a);
+		break;
+	case libtorrent::metadata_received_alert::alert_type:
+		handle_metadata_received_alert(
+			(libtorrent::metadata_received_alert *) a);
+		break;
+	case libtorrent::torrent_added_alert::alert_type:
+		handle_torrent_added_alert(
+			(libtorrent::torrent_added_alert *) a);
+		break;
+	default:
+		//printf("unknown event %d\n", a->type());
+		break;
+	}
+
+	delete a;
+}
+
 static void*
 alert_queue_loop(void *data) {
 	int oldstate, oldtype;
@@ -282,36 +313,11 @@ alert_queue_loop(void *data) {
 		if (!session->wait_for_alert(libtorrent::seconds(1)))
 			continue;
 
-		std::auto_ptr<libtorrent::alert> a = session->pop_alert();
+		std::deque<libtorrent::alert*> alerts;
 
-		switch (a->type()) {
-		case libtorrent::read_piece_alert::alert_type:
-			handle_read_piece_alert(
-				(libtorrent::read_piece_alert *) a.get());
-			break;
-		case libtorrent::piece_finished_alert::alert_type:
-			handle_piece_finished_alert(
-				(libtorrent::piece_finished_alert *) a.get());
-			break;
-		case libtorrent::metadata_failed_alert::alert_type:
-			handle_metadata_failed_alert(
-				(libtorrent::metadata_failed_alert *) a.get());
-			break;
-		case libtorrent::metadata_received_alert::alert_type:
-			handle_metadata_received_alert(
-				(libtorrent::metadata_received_alert *) a.get());
-			break;
-		case libtorrent::torrent_added_alert::alert_type:
-			handle_torrent_added_alert(
-				(libtorrent::torrent_added_alert *) a.get());
-			break;
-		case libtorrent::add_torrent_alert::alert_type:
-			// TODO
-			break;
-		default:
-			//printf("unknown event %d\n", a->type());
-			break;
-		}
+		session->pop_alerts(&alerts);
+
+		std::for_each(alerts.begin(), alerts.end(), handle_alert);
 	}
 
 	return NULL;
