@@ -510,8 +510,7 @@ populate_target(libtorrent::add_torrent_params& p, char *arg) {
 
 	if (mkdir(templ.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) < 0) {
 		if (errno != EEXIST)
-			RETV(fprintf(stderr, "Failed to create target: %m\n"),
-				false);
+			RETV(perror("Failed to create target"), false);
 	}
 
 	templ += "/btfs-XXXXXX";
@@ -597,8 +596,7 @@ populate_metadata(libtorrent::add_torrent_params& p, const char *arg) {
 		char *r = realpath(uri.c_str(), NULL);
 
 		if (!r)
-			RETV(fprintf(stderr, "Can't find metadata: %m\n"),
-				false);
+			RETV(perror("Can't find metadata"), false);
 
 		libtorrent::error_code ec;
 
