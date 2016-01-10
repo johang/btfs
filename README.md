@@ -21,6 +21,10 @@ To unmount and shutdown:
     $ sudo apt-get update
     $ sudo apt-get install btfs
 
+## Installing on Arch Linux
+
+    $ sudo pacman -S btfs
+
 ## Dependencies (on Linux)
 
 * fuse ("fuse" in Debian/Ubuntu)
