@@ -499,7 +499,21 @@ btfs_init(struct fuse_conn_info *conn) {
 		libtorrent::session::add_default_plugins,
 		alerts);
 
+	pthread_create(&alert_thread, NULL, alert_queue_loop,
+		new Log(p->save_path + "/../log.txt"));
+
+#ifndef __APPLE__
+	pthread_setname_np(alert_thread, "alert");
+#endif
+
+	libtorrent::session_settings se = session->settings();
+
+	se.strict_end_game_mode = false;
+	se.announce_to_all_trackers = true;
+	se.announce_to_all_tiers = true;
+	
 	if (params.proxy != NULL) {
+		se.force_proxy = true;
 		if (params.proxy_type == NULL) {
 			params.proxy_type = "socks5h";
 		}
@@ -531,19 +545,6 @@ btfs_init(struct fuse_conn_info *conn) {
 		proxy.type = libtorrent_proxy_type;
 		session->set_proxy(proxy);
 	}
-
-	pthread_create(&alert_thread, NULL, alert_queue_loop,
-		new Log(p->save_path + "/../log.txt"));
-
-#ifndef __APPLE__
-	pthread_setname_np(alert_thread, "alert");
-#endif
-
-	libtorrent::session_settings se = session->settings();
-
-	se.strict_end_game_mode = false;
-	se.announce_to_all_trackers = true;
-	se.announce_to_all_tiers = true;
 
 	session->set_settings(se);
 	session->async_add_torrent(*p);
