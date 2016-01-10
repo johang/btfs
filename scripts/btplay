@@ -36,7 +36,7 @@ if not cmd:
 
 mountpoint = tempfile.mkdtemp(prefix="btplay-")
 
-ret = subprocess.call(("btfs", args.URI, mountpoint, ))
+ret = subprocess.call(["btfs", args.URI, mountpoint, ] + sys.argv[1:])
 
 def find_files(p):
 	for dirpath, dnames, fnames in os.walk(p):
