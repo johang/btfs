@@ -21,6 +21,7 @@ along with BTFS.  If not, see <http://www.gnu.org/licenses/>.
 #define BTFS_H
 
 #include <libtorrent/peer_request.hpp>
+#include <libtorrent/session_settings.hpp>
 
 namespace btfs
 {
@@ -111,11 +112,24 @@ enum {
 	KEY_HELP,
 };
 
+struct proxy_type {
+	const char *libcurl_name;
+	libtorrent::proxy_settings::proxy_type libtorrent_type;
+};
+
+proxy_type proxy_types[] = {
+	{"socks5h", libtorrent::proxy_settings::socks5},
+	{"socks5", libtorrent::proxy_settings::socks5},
+	{"http", libtorrent::proxy_settings::http}
+};
+
 struct btfs_params {
 	int version;
 	int help;
 	int browse_only;
 	int keep;
+	const char *proxy;
+	const char *proxy_type;
 	const char *metadata;
 };
 

@@ -499,6 +499,39 @@ btfs_init(struct fuse_conn_info *conn) {
 		libtorrent::session::add_default_plugins,
 		alerts);
 
+	if (params.proxy != NULL) {
+		if (params.proxy_type == NULL) {
+			params.proxy_type = "socks5h";
+		}
+		bool found_proxy_type = false;
+		libtorrent::proxy_settings::proxy_type libtorrent_proxy_type;
+		for (unsigned int i = 0; i < sizeof(proxy_types) / sizeof(proxy_types[0]); i++) {
+			proxy_type type = proxy_types[i];
+			if (type.libcurl_name == params.proxy_type) {
+				found_proxy_type = true;
+				libtorrent_proxy_type = type.libtorrent_type;
+				break;
+			}
+		}
+		if (!found_proxy_type) {
+			fprintf(stderr, "Unkown proxy type");
+			exit(1);
+		}
+
+		libtorrent::proxy_settings proxy = libtorrent::proxy_settings();
+		std::string proxyString = std::string(params.proxy);
+		int index = proxyString.find(':');
+		if (index != std::string::npos) {
+			proxy.hostname = proxyString.substr(0, index);
+			proxy.port = atoi(proxyString.substr(index).c_str());
+		} else {
+			proxy.hostname = params.proxy;
+			proxy.port = 1080;
+		}
+		proxy.type = libtorrent_proxy_type;
+		session->set_proxy(proxy);
+	}
+
 	pthread_create(&alert_thread, NULL, alert_queue_loop,
 		new Log(p->save_path + "/../log.txt"));
 
@@ -604,6 +637,13 @@ populate_metadata(libtorrent::add_torrent_params& p, const char *arg) {
 		curl_easy_setopt(ch, CURLOPT_WRITEDATA, (void *) &output); 
 		curl_easy_setopt(ch, CURLOPT_USERAGENT, "btfs/" VERSION);
 		curl_easy_setopt(ch, CURLOPT_FOLLOWLOCATION, 1);
+		if (params.proxy_type == NULL) {
+			params.proxy_type = "socks5h";
+		}
+		if (params.proxy != NULL) {
+			curl_easy_setopt(ch, CURLOPT_PROXY, params.proxy);
+			curl_easy_setopt(ch, CURLOPT_PROXYTYPE, params.proxy_type);
+		}
 
 		CURLcode res = curl_easy_perform(ch);
 
@@ -658,14 +698,17 @@ populate_metadata(libtorrent::add_torrent_params& p, const char *arg) {
 #define BTFS_OPT(t, p, v) { t, offsetof(struct btfs_params, p), v }
 
 static const struct fuse_opt btfs_opts[] = {
-	BTFS_OPT("-v",            version,     1),
-	BTFS_OPT("--version",     version,     1),
-	BTFS_OPT("-h",            help,        1),
-	BTFS_OPT("--help",        help,        1),
-	BTFS_OPT("-b",            browse_only, 1),
-	BTFS_OPT("--browse-only", browse_only, 1),
-	BTFS_OPT("-k",            keep,        1),
-	BTFS_OPT("--keep",        keep,        1),
+	BTFS_OPT("-v",              version,     1),
+	BTFS_OPT("--version",       version,     1),
+	BTFS_OPT("-h",              help,        1),
+	BTFS_OPT("--help",          help,        1),
+	BTFS_OPT("-b",              browse_only, 1),
+	BTFS_OPT("--browse-only",   browse_only, 1),
+	BTFS_OPT("-k",              keep,        1),
+	BTFS_OPT("-p=%s",           proxy,       4),
+	BTFS_OPT("-proxy=%s",       proxy,       4),
+	BTFS_OPT("--proxy-type=%s", proxy_type,  4),
+	BTFS_OPT("--keep",          keep,        1),
 	FUSE_OPT_END
 };
 
@@ -727,6 +770,8 @@ main(int argc, char *argv[]) {
 		printf("    --help -h              show this message\n");
 		printf("    --browse-only -b       download metadata only\n");
 		printf("    --keep -k              keep files after unmount\n");
+		printf("    --proxy= -p=           use a proxy with the given address\n");
+		printf("    --proxy-type=          set the type of proxy (defaults to socks5h)\n");
 		printf("\n");
 
 		// Let FUSE print more help
