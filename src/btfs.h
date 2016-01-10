@@ -112,15 +112,16 @@ enum {
 	KEY_HELP,
 };
 
-struct proxy_type {
-	const char *libcurl_name;
-	libtorrent::proxy_settings::proxy_type libtorrent_type;
-};
-
-proxy_type proxy_types[] = {
+std::map<std::string, libtorrent::proxy_settings::proxy_type> libtorrent_proxy_types = {
+	{"socks4", libtorrent::proxy_settings::socks4},
 	{"socks5h", libtorrent::proxy_settings::socks5},
 	{"socks5", libtorrent::proxy_settings::socks5},
 	{"http", libtorrent::proxy_settings::http}
+};
+
+std::map<libtorrent::proxy_settings::proxy_type, libtorrent::proxy_settings::proxy_type> libtorrent_authed_proxy_types = {
+	{libtorrent::proxy_settings::socks5, libtorrent::proxy_settings::socks5_pw},
+	{libtorrent::proxy_settings::http, libtorrent::proxy_settings::http_pw}
 };
 
 struct btfs_params {
@@ -130,6 +131,8 @@ struct btfs_params {
 	int keep;
 	const char *proxy;
 	const char *proxy_type;
+	const char *proxy_username;
+	const char *proxy_password;
 	const char *metadata;
 };
 
