@@ -568,7 +568,7 @@ populate_metadata(libtorrent::add_torrent_params& p, const char *arg) {
 		CURLcode res = curl_easy_perform(ch);
 
 		if(res != CURLE_OK)
-			RETV(fprintf(stderr, "curl failed: %s\n",
+			RETV(fprintf(stderr, "Download metadata failed: %s\n",
 				curl_easy_strerror(res)), false);
 
 		curl_easy_cleanup(ch);
@@ -579,7 +579,7 @@ populate_metadata(libtorrent::add_torrent_params& p, const char *arg) {
 			output.size, ec);
 
 		if (ec)
-			RETV(fprintf(stderr, "Can't load metadata: %s\n",
+			RETV(fprintf(stderr, "Parse metadata failed: %s\n",
 				ec.message().c_str()), false);
 
 		if (params.browse_only)
@@ -590,13 +590,13 @@ populate_metadata(libtorrent::add_torrent_params& p, const char *arg) {
 		parse_magnet_uri(uri, p, ec);
 
 		if (ec)
-			RETV(fprintf(stderr, "Can't load magnet: %s\n",
+			RETV(fprintf(stderr, "Parse magnet failed: %s\n",
 				ec.message().c_str()), false);
 	} else {
 		char *r = realpath(uri.c_str(), NULL);
 
 		if (!r)
-			RETV(perror("Can't find metadata"), false);
+			RETV(perror("Find metadata failed"), false);
 
 		libtorrent::error_code ec;
 
@@ -605,7 +605,7 @@ populate_metadata(libtorrent::add_torrent_params& p, const char *arg) {
 		free(r);
 
 		if (ec)
-			RETV(fprintf(stderr, "Can't load metadata: %s\n",
+			RETV(fprintf(stderr, "Parse metadata failed: %s\n",
 				ec.message().c_str()), false);
 
 		if (params.browse_only)
