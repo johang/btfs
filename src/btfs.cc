@@ -20,6 +20,8 @@ along with BTFS.  If not, see <http://www.gnu.org/licenses/>.
 #define FUSE_USE_VERSION 26
 
 #include <cstdlib>
+#include <iostream>
+#include <fstream>
 
 #include <pthread.h>
 #include <sys/types.h>
@@ -208,7 +210,7 @@ setup() {
 }
 
 static void
-handle_read_piece_alert(libtorrent::read_piece_alert *a) {
+handle_read_piece_alert(libtorrent::read_piece_alert *a, Log *log) {
 	printf("%s: piece %d size %d\n", __func__, a->piece, a->size);
 
 	pthread_mutex_lock(&lock);
@@ -224,7 +226,7 @@ handle_read_piece_alert(libtorrent::read_piece_alert *a) {
 }
 
 static void
-handle_piece_finished_alert(libtorrent::piece_finished_alert *a) {
+handle_piece_finished_alert(libtorrent::piece_finished_alert *a, Log *log) {
 	printf("%s: %d\n", __func__, a->piece_index);
 
 	pthread_mutex_lock(&lock);
@@ -240,12 +242,7 @@ handle_piece_finished_alert(libtorrent::piece_finished_alert *a) {
 }
 
 static void
-handle_metadata_failed_alert(libtorrent::metadata_failed_alert *a) {
-	//printf("%s\n", __func__);
-}
-
-static void
-handle_torrent_added_alert(libtorrent::torrent_added_alert *a) {
+handle_torrent_added_alert(libtorrent::torrent_added_alert *a, Log *log) {
 	//printf("%s()\n", __func__);
 
 	pthread_mutex_lock(&lock);
@@ -259,7 +256,8 @@ handle_torrent_added_alert(libtorrent::torrent_added_alert *a) {
 }
 
 static void
-handle_metadata_received_alert(libtorrent::metadata_received_alert *a) {
+handle_metadata_received_alert(libtorrent::metadata_received_alert *a,
+		Log *log) {
 	//printf("%s\n", __func__);
 
 	pthread_mutex_lock(&lock);
@@ -272,34 +270,51 @@ handle_metadata_received_alert(libtorrent::metadata_received_alert *a) {
 }
 
 static void
-handle_alert(libtorrent::alert *a) {
+handle_alert(libtorrent::alert *a, Log *log) {
 	switch (a->type()) {
 	case libtorrent::read_piece_alert::alert_type:
 		handle_read_piece_alert(
-			(libtorrent::read_piece_alert *) a);
+			(libtorrent::read_piece_alert *) a, log);
 		break;
 	case libtorrent::piece_finished_alert::alert_type:
+		*log << a->message() << std::endl;
 		handle_piece_finished_alert(
-			(libtorrent::piece_finished_alert *) a);
-		break;
-	case libtorrent::metadata_failed_alert::alert_type:
-		handle_metadata_failed_alert(
-			(libtorrent::metadata_failed_alert *) a);
+			(libtorrent::piece_finished_alert *) a, log);
 		break;
 	case libtorrent::metadata_received_alert::alert_type:
+		*log << a->message() << std::endl;
 		handle_metadata_received_alert(
-			(libtorrent::metadata_received_alert *) a);
+			(libtorrent::metadata_received_alert *) a, log);
 		break;
 	case libtorrent::torrent_added_alert::alert_type:
+		*log << a->message() << std::endl;
 		handle_torrent_added_alert(
-			(libtorrent::torrent_added_alert *) a);
+			(libtorrent::torrent_added_alert *) a, log);
+		break;
+	case libtorrent::metadata_failed_alert::alert_type:
+	case libtorrent::tracker_announce_alert::alert_type:
+	case libtorrent::tracker_reply_alert::alert_type:
+	case libtorrent::tracker_warning_alert::alert_type:
+	case libtorrent::tracker_error_alert::alert_type:
+		*log << a->message() << std::endl;
+		break;
+	case libtorrent::stats_alert::alert_type:
+		//*log << a->message() << std::endl;
 		break;
 	default:
-		//printf("unknown event %d\n", a->type());
 		break;
 	}
 
 	delete a;
+}
+
+
+static void
+alert_queue_loop_destroy(void *data) {
+	Log *log = (Log *) data;
+
+	if (log)
+		delete log;
 }
 
 static void*
@@ -309,6 +324,8 @@ alert_queue_loop(void *data) {
 	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &oldstate);
 	pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, &oldtype);
 
+	pthread_cleanup_push(&alert_queue_loop_destroy, data);
+
 	while (1) {
 		if (!session->wait_for_alert(libtorrent::seconds(1)))
 			continue;
@@ -317,8 +334,13 @@ alert_queue_loop(void *data) {
 
 		session->pop_alerts(&alerts);
 
-		std::for_each(alerts.begin(), alerts.end(), handle_alert);
+		for (std::deque<libtorrent::alert*>::iterator i =
+				alerts.begin(); i != alerts.end(); ++i) {
+			handle_alert(*i, (Log *) data);
+		}
 	}
+
+	pthread_cleanup_pop(1);
 
 	return NULL;
 }
@@ -438,7 +460,8 @@ btfs_init(struct fuse_conn_info *conn) {
 		fuse_get_context()->private_data;
 
 	int alerts =
-		//libtorrent::alert::all_categories |
+		libtorrent::alert::tracker_notification |
+		libtorrent::alert::stats_notification |
 		libtorrent::alert::storage_notification |
 		libtorrent::alert::progress_notification |
 		libtorrent::alert::status_notification |
@@ -456,7 +479,8 @@ btfs_init(struct fuse_conn_info *conn) {
 		libtorrent::session::add_default_plugins,
 		alerts);
 
-	pthread_create(&alert_thread, NULL, alert_queue_loop, NULL);
+	pthread_create(&alert_thread, NULL, alert_queue_loop,
+		new Log(p->save_path + "/../log.txt"));
 
 #ifndef __APPLE__
 	pthread_setname_np(alert_thread, "alert");
@@ -483,20 +507,16 @@ btfs_destroy(void *user_data) {
 	pthread_cancel(alert_thread);
 	pthread_join(alert_thread, NULL);
 
-	std::string path = handle.save_path();
-
 	session->remove_torrent(handle,
 		params.keep ? 0 : libtorrent::session::delete_files);
 
 	delete session;
 
-	rmdir(path.c_str());
-
 	pthread_mutex_unlock(&lock);
 }
 
 static bool
-populate_target(libtorrent::add_torrent_params& p, char *arg) {
+populate_target(std::string& target, char *arg) {
 	std::string templ;
 
 	if (arg) {
@@ -521,7 +541,7 @@ populate_target(libtorrent::add_torrent_params& p, char *arg) {
 		char *x = realpath(s, NULL);
 
 		if (x)
-			p.save_path = x;
+			target = x;
 		else
 			perror("Failed to expand target");
 
@@ -532,7 +552,7 @@ populate_target(libtorrent::add_torrent_params& p, char *arg) {
 
 	free(s);
 
-	return p.save_path.length() > 0;
+	return target.length() > 0;
 }
 
 static size_t
@@ -696,13 +716,19 @@ main(int argc, char *argv[]) {
 		return 0;
 	}
 
+	std::string target;
+
+	if (!populate_target(target, NULL))
+		return -1;
+
 	libtorrent::add_torrent_params p;
 
 	p.flags &= ~libtorrent::add_torrent_params::flag_auto_managed;
 	p.flags &= ~libtorrent::add_torrent_params::flag_paused;
+	p.save_path = target + "/files";
 
-	if (!populate_target(p, NULL))
-		return -1;
+	if (mkdir(p.save_path.c_str(), 0777) < 0)
+		RETV(perror("Failed to create files directory"), -1);
 
 	curl_global_init(CURL_GLOBAL_ALL);
 
@@ -712,6 +738,12 @@ main(int argc, char *argv[]) {
 	fuse_main(args.argc, args.argv, &btfs_ops, (void *) &p);
 
 	curl_global_cleanup();
+
+	if (rmdir(p.save_path.c_str()))
+		RETV(perror("Failed to remove files directory"), -1);
+
+	if (rmdir(target.c_str()))
+		RETV(perror("Failed to remove target directory"), -1);
 
 	return 0;
 }

@@ -86,6 +86,26 @@ public:
 	size_t size;
 };
 
+class Log : public std::ofstream
+{
+public:
+	Log(std::string p) : std::ofstream(p.c_str()), path(p) {
+		if (!is_open())
+			// If open log file fails, write to a dummy file
+			open("/dev/null");
+	}
+
+	~Log() {
+		close();
+
+		if (remove(path.c_str()))
+			perror("Failed to remove log");
+	}
+
+private:
+	std::string path;
+};
+
 enum {
 	KEY_VERSION,
 	KEY_HELP,
