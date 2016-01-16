@@ -759,11 +759,13 @@ main(int argc, char *argv[]) {
 
 	curl_global_cleanup();
 
-	if (rmdir(p.save_path.c_str()))
-		RETV(perror("Failed to remove files directory"), -1);
+	if (!params.keep) {
+		if (rmdir(p.save_path.c_str()))
+			RETV(perror("Failed to remove files directory"), -1);
 
-	if (rmdir(target.c_str()))
-		RETV(perror("Failed to remove target directory"), -1);
+		if (rmdir(target.c_str()))
+			RETV(perror("Failed to remove target directory"), -1);
+	}
 
 	return 0;
 }
