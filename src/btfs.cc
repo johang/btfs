@@ -35,6 +35,7 @@ along with BTFS.  If not, see <http://www.gnu.org/licenses/>.
 #include <libtorrent/peer_request.hpp>
 #include <libtorrent/alert_types.hpp>
 #include <libtorrent/magnet_uri.hpp>
+#include <libtorrent/version.hpp>
 
 #include <curl/curl.h>
 
@@ -64,8 +65,8 @@ pthread_cond_t signal_cond = PTHREAD_COND_INITIALIZER;
 static struct btfs_params params;
 
 static bool
-move_to_next_unfinished(int& piece) {
-	for (; piece < handle.get_torrent_info().num_pieces(); piece++) {
+move_to_next_unfinished(int& piece, int num_pieces) {
+	for (; piece < num_pieces; piece++) {
 		if (!handle.have_piece(piece))
 			return true;
 	}
@@ -75,14 +76,20 @@ move_to_next_unfinished(int& piece) {
 
 static void
 jump(int piece, int size) {
+#if LIBTORRENT_VERSION_NUM < 10000
+	libtorrent::torrent_info ti = handle.get_torrent_info();
+#else
+	libtorrent::torrent_info ti = *handle.torrent_file();
+#endif
+
 	int tail = piece;
 
-	if (!move_to_next_unfinished(tail))
+	if (!move_to_next_unfinished(tail, ti.num_pieces()))
 		return;
 
 	cursor = tail;
 
-	int pl = handle.get_torrent_info().piece_length();
+	int pl = ti.piece_length();
 
 	for (int b = 0; b < 16 * pl; b += pl) {
 		handle.piece_priority(tail++, 7);
@@ -99,16 +106,20 @@ advance() {
 }
 
 Read::Read(char *buf, int index, int offset, int size) {
-	libtorrent::torrent_info metadata = handle.get_torrent_info();
+#if LIBTORRENT_VERSION_NUM < 10000
+	libtorrent::torrent_info ti = handle.get_torrent_info();
+#else
+	libtorrent::torrent_info ti = *handle.torrent_file();
+#endif
 
-	libtorrent::file_entry file = metadata.file_at(index);
+	libtorrent::file_entry file = ti.file_at(index);
 
 	while (size > 0 && offset < file.size) {
-		libtorrent::peer_request part = metadata.map_file(index,
-			offset, size);
+		libtorrent::peer_request part = ti.map_file(index, offset,
+			size);
 
 		part.length = std::min(
-			metadata.piece_size(part.piece) - part.start,
+			ti.piece_size(part.piece) - part.start,
 			part.length);
 
 		parts.push_back(Part(part, buf));
@@ -174,7 +185,11 @@ static void
 setup() {
 	printf("Got metadata. Now ready to start downloading.\n");
 
+#if LIBTORRENT_VERSION_NUM < 10000
 	libtorrent::torrent_info ti = handle.get_torrent_info();
+#else
+	libtorrent::torrent_info ti = *handle.torrent_file();
+#endif
 
 	if (params.browse_only)
 		handle.pause();
@@ -370,8 +385,13 @@ btfs_getattr(const char *path, struct stat *stbuf) {
 	if (strcmp(path, "/") == 0 || is_dir(path)) {
 		stbuf->st_mode = S_IFDIR | 0755;
 	} else {
-		libtorrent::file_entry file =
-			handle.get_torrent_info().file_at(files[path]);
+#if LIBTORRENT_VERSION_NUM < 10000
+		libtorrent::torrent_info ti = handle.get_torrent_info();
+#else
+		libtorrent::torrent_info ti = *handle.torrent_file();
+#endif
+
+		libtorrent::file_entry file = ti.file_at(files[path]);
 
 		stbuf->st_mode = S_IFREG | 0444;
 		stbuf->st_size = file.size;
