@@ -1,0 +1,44 @@
+.TH BTFS 1
+.SH NAME
+btfs \- mount torrent files or magnet links as a file system
+.SH SYNOPSIS
+.B btfs
+[\fIoptions\fP]
+\fBmetadata\fP
+\fBmountpoint\fP
+.SH DESCRIPTION
+.B btfs
+BTFS allows to mount any torrent file or a magnet link as a file
+
+system. The contents of the files will be downloaded on-demand as they are read by
+applications.
+.SH OPTIONS
+.TP
+\fB\-v\fR   \fB\-\-version\fR
+print version
+.TP
+\fB\-h\fR   \fB\-\-help\fR
+print help
+.TP
+\fB\-b\fR   \fB\-\-browse-only\fR
+download metadata only
+.TP
+\fB\-k\fR   \fB\-\-keep\fR
+keep files after unmount
+.SH EXAMPLES
+mounting a torrent file:
+  btfs video.torrent ~/mnt
+
+mountng a magnet link:
+  btfs 'btfs 'magnet:?xt=urn:btih:...' ~/mnt
+
+unmounting:
+  fusermount -u ~/mnt
+.SH BUGS
+Please report any bugs to https://github.com/johang/btfs.
+.PD
+.SH "AUTHORS"
+.LP
+BTFS has been written by Johan Gunnarsson <johan.gunnarsson@gmail.com>
+.LP
+This man page was written by Donat Kh. <donat@opmbx.org>
