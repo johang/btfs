@@ -511,6 +511,10 @@ btfs_init(struct fuse_conn_info *conn) {
 	se.strict_end_game_mode = false;
 	se.announce_to_all_trackers = true;
 	se.announce_to_all_tiers = true;
+
+	if (params.proxy == NULL && params.proxy_type != NULL && strcmp(params.proxy_type, "i2p") == 0) {
+		params.proxy = "127.0.0.1:7656";
+	}
 	
 	if (params.proxy != NULL) {
 		se.force_proxy = true;
@@ -647,26 +651,24 @@ populate_metadata(libtorrent::add_torrent_params& p, const char *arg) {
 		curl_easy_setopt(ch, CURLOPT_WRITEDATA, (void *) &output); 
 		curl_easy_setopt(ch, CURLOPT_USERAGENT, "btfs/" VERSION);
 		curl_easy_setopt(ch, CURLOPT_FOLLOWLOCATION, 1);
-		if (params.proxy != NULL) {
+		if (params.proxy_type != NULL && strcmp(params.proxy_type, "i2p") == 0) {
+			if (params.i2p_http_proxy) {
+				curl_easy_setopt(ch, CURLOPT_PROXY, params.i2p_http_proxy);
+			} else {
+				curl_easy_setopt(ch, CURLOPT_PROXY, "127.0.0.1:4444");
+			}
+			curl_easy_setopt(ch, CURLOPT_PROXYTYPE, "http");
+		} else if (params.proxy != NULL) {
 			if (params.proxy_type == NULL) {
 				params.proxy_type = "socks5h";
 			}
-			if (strcmp(params.proxy_type, "i2p") == 0) {
-				if (params.i2p_http_proxy) {
-					curl_easy_setopt(ch, CURLOPT_PROXY, params.i2p_http_proxy);
-				} else {
-					curl_easy_setopt(ch, CURLOPT_PROXY, "127.0.0.1:4444");
-				}
-				curl_easy_setopt(ch, CURLOPT_PROXYTYPE, "http");
-			} else {
-				curl_easy_setopt(ch, CURLOPT_PROXY, params.proxy);
-				curl_easy_setopt(ch, CURLOPT_PROXYTYPE, params.proxy_type);
-				if (params.proxy_username != NULL) {
-					curl_easy_setopt(ch, CURLOPT_PROXYUSERNAME, params.proxy_username);
-				}
-				if (params.proxy_password != NULL) {
-					curl_easy_setopt(ch, CURLOPT_PROXYPASSWORD, params.proxy_password);
-				}
+			curl_easy_setopt(ch, CURLOPT_PROXY, params.proxy);
+			curl_easy_setopt(ch, CURLOPT_PROXYTYPE, params.proxy_type);
+			if (params.proxy_username != NULL) {
+				curl_easy_setopt(ch, CURLOPT_PROXYUSERNAME, params.proxy_username);
+			}
+			if (params.proxy_password != NULL) {
+				curl_easy_setopt(ch, CURLOPT_PROXYPASSWORD, params.proxy_password);
 			}
 		}
 
