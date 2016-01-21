@@ -518,14 +518,16 @@ btfs_init(struct fuse_conn_info *conn) {
 			params.proxy_type = "socks5h";
 		}
 		libtorrent::proxy_settings::proxy_type libtorrent_proxy_type = libtorrent_proxy_types[params.proxy_type];
-		if (libtorrent_proxy_type == libtorrent::proxy_settings::none) { // None is the default value
-			fprintf(stderr, "Unkown proxy type");
-			exit(1);
-		}
-		if (params.proxy_username != NULL && params.proxy_password != NULL) {
-			libtorrent::proxy_settings::proxy_type new_type = libtorrent_authed_proxy_types[libtorrent_proxy_type];
-			if (new_type != libtorrent::proxy_settings::none) {
-				libtorrent_proxy_type = new_type;
+		if (strcmp(params.proxy_type, "i2p") != 0) {
+			if (libtorrent_proxy_type == libtorrent::proxy_settings::none) { // None is the default value
+				fprintf(stderr, "Unkown proxy type");
+				exit(1);
+			}
+			if (params.proxy_username != NULL && params.proxy_password != NULL) {
+				libtorrent::proxy_settings::proxy_type new_type = libtorrent_authed_proxy_types[libtorrent_proxy_type];
+				if (new_type != libtorrent::proxy_settings::none) {
+					libtorrent_proxy_type = new_type;
+				}
 			}
 		}
 
@@ -545,8 +547,12 @@ btfs_init(struct fuse_conn_info *conn) {
 		if (params.proxy_password) {
 			proxy.password = params.proxy_password;
 		}
-		proxy.type = libtorrent_proxy_type;
-		session->set_proxy(proxy);
+		if (strcmp(params.proxy_type, "i2p") == 0) {
+			session->set_i2p_proxy(proxy);
+		} else {
+			proxy.type = libtorrent_proxy_type;
+			session->set_proxy(proxy);
+		}
 	}
 
 	session->set_settings(se);
@@ -642,16 +648,25 @@ populate_metadata(libtorrent::add_torrent_params& p, const char *arg) {
 		curl_easy_setopt(ch, CURLOPT_USERAGENT, "btfs/" VERSION);
 		curl_easy_setopt(ch, CURLOPT_FOLLOWLOCATION, 1);
 		if (params.proxy != NULL) {
-			curl_easy_setopt(ch, CURLOPT_PROXY, params.proxy);
 			if (params.proxy_type == NULL) {
 				params.proxy_type = "socks5h";
 			}
-			curl_easy_setopt(ch, CURLOPT_PROXYTYPE, params.proxy_type);
-			if (params.proxy_username != NULL) {
-				curl_easy_setopt(ch, CURLOPT_PROXYUSERNAME, params.proxy_username);
-			}
-			if (params.proxy_password != NULL) {
-				curl_easy_setopt(ch, CURLOPT_PROXYPASSWORD, params.proxy_password);
+			if (strcmp(params.proxy_type, "i2p") == 0) {
+				if (params.i2p_http_proxy) {
+					curl_easy_setopt(ch, CURLOPT_PROXY, params.i2p_http_proxy);
+				} else {
+					curl_easy_setopt(ch, CURLOPT_PROXY, "127.0.0.1:4444");
+				}
+				curl_easy_setopt(ch, CURLOPT_PROXYTYPE, "http");
+			} else {
+				curl_easy_setopt(ch, CURLOPT_PROXY, params.proxy);
+				curl_easy_setopt(ch, CURLOPT_PROXYTYPE, params.proxy_type);
+				if (params.proxy_username != NULL) {
+					curl_easy_setopt(ch, CURLOPT_PROXYUSERNAME, params.proxy_username);
+				}
+				if (params.proxy_password != NULL) {
+					curl_easy_setopt(ch, CURLOPT_PROXYPASSWORD, params.proxy_password);
+				}
 			}
 		}
 
@@ -717,10 +732,11 @@ static const struct fuse_opt btfs_opts[] = {
 	BTFS_OPT("-k",                  keep,           1),
 	BTFS_OPT("--keep",              keep,           1),
 	BTFS_OPT("-p=%s",               proxy,          4),
-	BTFS_OPT("-proxy=%s",           proxy,          4),
+	BTFS_OPT("--proxy=%s",          proxy,          4),
 	BTFS_OPT("--proxy-type=%s",     proxy_type,     4),
 	BTFS_OPT("--proxy-username=%s", proxy_username, 4),
 	BTFS_OPT("--proxy-password=%s", proxy_password, 4),
+	BTFS_OPT("--i2p-http-proxy=%s", i2p_http_proxy, 4),
 	FUSE_OPT_END
 };
 
@@ -788,6 +804,8 @@ main(int argc, char *argv[]) {
 		printf("    --proxy-password=      login to the proxy with the given password\n");
 		printf("                             As a process argument, this is readable\n");
 		printf("                             by any user by looking at a list of processes\n");
+		printf("    --i2p-http-proxy=      provide an http proxy for use by curl in place of i2p\n");
+		printf("                             Only used if the proxy type is set to i2p\n");
 		printf("\n");
 
 		// Let FUSE print more help

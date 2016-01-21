@@ -133,6 +133,7 @@ struct btfs_params {
 	const char *proxy_type;
 	const char *proxy_username;
 	const char *proxy_password;
+	const char *i2p_http_proxy;
 	const char *metadata;
 };
 
