@@ -1,3 +1,3 @@
 AUTOMAKE_OPTIONS = foreign
-SUBDIRS = src scripts
+SUBDIRS = src scripts man
 EXTRA_DIST = LICENSE README.md

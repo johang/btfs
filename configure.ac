@@ -7,6 +7,10 @@ AM_INIT_AUTOMAKE
 # Checks for programs.
 AC_PROG_CXX
 
+AC_CONFIG_FILES([
+	man/Makefile
+])
+
 # Checks for libraries.
 PKG_CHECK_MODULES(FUSE, fuse >= 2.8.0)
 PKG_CHECK_MODULES(LIBTORRENT, libtorrent-rasterbar >= 0.16.0)
