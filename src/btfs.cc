@@ -657,13 +657,17 @@ populate_metadata(libtorrent::add_torrent_params& p, const char *arg) {
 			} else {
 				curl_easy_setopt(ch, CURLOPT_PROXY, "127.0.0.1:4444");
 			}
-			curl_easy_setopt(ch, CURLOPT_PROXYTYPE, "http");
+			curl_easy_setopt(ch, CURLOPT_PROXYTYPE, CURLPROXY_HTTP);
 		} else if (params.proxy != NULL) {
 			if (params.proxy_type == NULL) {
 				params.proxy_type = "socks5h";
 			}
-			curl_easy_setopt(ch, CURLOPT_PROXY, params.proxy);
-			curl_easy_setopt(ch, CURLOPT_PROXYTYPE, params.proxy_type);
+			int proxy_type_len = strlen(params.proxy_type);
+			char proxy_string[proxy_type_len + 3 + strlen(params.proxy) + 1];
+			strcpy(proxy_string, params.proxy_type);
+			strcpy(proxy_string + proxy_type_len, "://");
+			strcpy(proxy_string + proxy_type_len + 3, params.proxy); // includes ending null byte
+			curl_easy_setopt(ch, CURLOPT_PROXY, proxy_string);
 			if (params.proxy_username != NULL) {
 				curl_easy_setopt(ch, CURLOPT_PROXYUSERNAME, params.proxy_username);
 			}
@@ -801,6 +805,7 @@ main(int argc, char *argv[]) {
 		printf("    --browse-only -b       download metadata only\n");
 		printf("    --keep -k              keep files after unmount\n");
 		printf("    --proxy= -p=           use a proxy with the given address\n");
+		printf("                             should be in the form of host or host:port\n");
 		printf("    --proxy-type=          set the type of proxy (defaults to socks5h)\n");
 		printf("    --proxy-username=      login to the proxy with the given username\n");
 		printf("    --proxy-password=      login to the proxy with the given password\n");
