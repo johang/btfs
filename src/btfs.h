@@ -129,7 +129,8 @@ struct btfs_params {
 	int help;
 	int browse_only;
 	int keep;
-	const char *proxy;
+	const char *proxy_hostname;
+	int proxy_port;
 	const char *proxy_type;
 	const char *proxy_username;
 	const char *proxy_password;

@@ -512,11 +512,16 @@ btfs_init(struct fuse_conn_info *conn) {
 	se.announce_to_all_trackers = true;
 	se.announce_to_all_tiers = true;
 
-	if (params.proxy == NULL && params.proxy_type != NULL && strcmp(params.proxy_type, "i2p") == 0) {
-		params.proxy = "127.0.0.1:7656";
+	if (params.proxy_hostname == NULL && params.proxy_type != NULL && strcmp(params.proxy_type, "i2p") == 0) {
+		params.proxy_hostname = "127.0.0.1";
+		params.proxy_port = 7656;
+	}
+
+	if (params.proxy_hostname != NULL && params.proxy_port == 0) {
+		params.proxy_port = 1080;
 	}
 	
-	if (params.proxy != NULL) {
+	if (params.proxy_hostname != NULL) {
 		se.force_proxy = true;
 		if (params.proxy_type == NULL) {
 			params.proxy_type = "socks5h";
@@ -536,15 +541,8 @@ btfs_init(struct fuse_conn_info *conn) {
 		}
 
 		libtorrent::proxy_settings proxy = session->proxy();
-		std::string proxyString = std::string(params.proxy);
-		unsigned int index = proxyString.find(':');
-		if (index != std::string::npos) {
-			proxy.hostname = proxyString.substr(0, index);
-			proxy.port = atoi(proxyString.substr(index).c_str());
-		} else {
-			proxy.hostname = params.proxy;
-			proxy.port = 1080;
-		}
+		proxy.hostname = params.proxy_hostname;
+		proxy.port = params.proxy_port;
 		if (params.proxy_username) {
 			proxy.username = params.proxy_username;
 		}
@@ -658,16 +656,17 @@ populate_metadata(libtorrent::add_torrent_params& p, const char *arg) {
 				curl_easy_setopt(ch, CURLOPT_PROXY, "127.0.0.1:4444");
 			}
 			curl_easy_setopt(ch, CURLOPT_PROXYTYPE, CURLPROXY_HTTP);
-		} else if (params.proxy != NULL) {
+		} else if (params.proxy_hostname != NULL) {
 			if (params.proxy_type == NULL) {
 				params.proxy_type = "socks5h";
 			}
-			int proxy_type_len = strlen(params.proxy_type);
-			char proxy_string[proxy_type_len + 3 + strlen(params.proxy) + 1];
-			strcpy(proxy_string, params.proxy_type);
-			strcpy(proxy_string + proxy_type_len, "://");
-			strcpy(proxy_string + proxy_type_len + 3, params.proxy); // includes ending null byte
-			curl_easy_setopt(ch, CURLOPT_PROXY, proxy_string);
+			std::string proxy_string = "";
+			proxy_string += params.proxy_type;
+			proxy_string += "://";
+			proxy_string += params.proxy_hostname;
+			proxy_string += ":";
+			proxy_string += params.proxy_port;
+			curl_easy_setopt(ch, CURLOPT_PROXY, proxy_string.c_str());
 			if (params.proxy_username != NULL) {
 				curl_easy_setopt(ch, CURLOPT_PROXYUSERNAME, params.proxy_username);
 			}
@@ -737,8 +736,8 @@ static const struct fuse_opt btfs_opts[] = {
 	BTFS_OPT("--browse-only",       browse_only,    1),
 	BTFS_OPT("-k",                  keep,           1),
 	BTFS_OPT("--keep",              keep,           1),
-	BTFS_OPT("-p=%s",               proxy,          4),
-	BTFS_OPT("--proxy=%s",          proxy,          4),
+	BTFS_OPT("--proxy-hostname=%s", proxy_hostname, 4),
+	BTFS_OPT("--proxy-port=%u",     proxy_port,     4),
 	BTFS_OPT("--proxy-type=%s",     proxy_type,     4),
 	BTFS_OPT("--proxy-username=%s", proxy_username, 4),
 	BTFS_OPT("--proxy-password=%s", proxy_password, 4),
