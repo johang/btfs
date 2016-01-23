@@ -1,51 +1,92 @@
 #!/usr/bin/python
 # copyright 2015 johan gunnarsson <johan.gunnarsson@gmail.com>
 
-import sys, os, os.path, tempfile, subprocess, time, shutil
+import sys, os, os.path, tempfile, subprocess, time, shutil, argparse
 
-if len(sys.argv) < 2:
-	print >> sys.stderr, "usage: btplay URI"
+PLAYLISTS_SUPPORTED = True
+PLAYLISTS_NOT_SUPPORTED = False
+
+players = [
+	("omxplayer", "omxplayer", PLAYLISTS_NOT_SUPPORTED),
+	("vlc", "vlc --file-caching 10000", PLAYLISTS_SUPPORTED),
+	("mplayer", "mplayer --cache-min=1", PLAYLISTS_SUPPORTED),
+]
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument("-p", "--player", action="store",
+	help="player to launch")
+parser.add_argument("-n", "--no-playlist", action="store_true",
+	help="don't build and pass an m3u playlist to player")
+parser.add_argument("URI", action="store",
+	help="magnet link or HTTP metadata URL to play")
+
+args = parser.parse_args()
+
+def which(x):
+	for d in os.getenv("PATH", "").split(":"):
+		if os.path.exists(os.path.join(d, x)):
+			return os.path.join(d, x)
+
+def find_player(players):
+	for player, cmd, pls in players:
+		if which(player):
+			return (which(player), cmd.split(" ")[1:], pls)
+
+try:
+	if args.player:
+		player_cmd, player_args, playlist = find_player([(
+			args.player.split(" ")[0],
+			args.player,
+			not args.no_playlist)])
+	else:
+		player_cmd, player_args, playlist = find_player(players)
+
+	if args.no_playlist:
+		playlist = False
+except:
+	print >>sys.stderr, "Could not find a player"
 	sys.exit(1)
-
-def files(p, d):
-	fs = []
-	for dirpath, dnames, fnames in os.walk(os.path.join(p, d)):
-		for f in fnames:
-			fs.append(dirpath.split(os.sep) + [f])
-	return fs
-
-def is_media(x):
-	for z in x:
-		if z.lower() == "sample":
-			return False
-	for z in x:
-		for a in (".mp4", ".mkv", ".avi"):
-			if z.lower().endswith(a):
-				return True
-	return False
 
 d = tempfile.mkdtemp(prefix="btplay-")
 
 mountpoint = os.path.join(d, "mnt")
-playlist = os.path.join(d, "playlist.m3u")
 
 os.mkdir(mountpoint)
 
-ret = subprocess.call(("btfs", sys.argv[1], mountpoint, ))
+ret = subprocess.call(("btfs", args.URI, mountpoint, ))
+
+def find_files(p):
+	for dirpath, dnames, fnames in os.walk(p):
+		for f in fnames:
+			yield os.path.join(dirpath, f)
+
+def is_sample(x):
+	return "sample" in [x.lower() for x in x.split(os.sep)]
+
+def is_video(x):
+	return any([x.lower().endswith(e) for e in (".mp4", ".mkv", ".avi")])
 
 if ret == 0:
 	try:
-		with open(playlist, "w") as p:
-			while len(os.listdir(mountpoint)) <= 0:
-				time.sleep(0.25)
+		while len(os.listdir(mountpoint)) <= 0:
+			time.sleep(0.25)
 
-			p.writelines(sorted([
-				"/%s\n" % os.path.join(*a)
-				for a in files(mountpoint, "")
-				if is_media(a)]))
+		media = sorted(filter(
+			lambda a: not is_sample(a) and is_video(a),
+			find_files(mountpoint)))
 
-		ret = subprocess.call(("vlc", "--file-caching", "10000",
-			playlist, ))
+		if len(media) > 1 and playlist:
+			item = os.path.join(d, "playlist.m3u")
+
+			with open(item, "w") as p:
+				p.writelines(["%s\n" % m for m in media])
+		else:
+			item = media[0]
+
+		ret = subprocess.call(
+			[player_cmd] + player_args + [item],
+			stdin=sys.stdin)
 	except KeyboardInterrupt:
 		ret = 1
 	except:
