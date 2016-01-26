@@ -3,21 +3,16 @@
 
 import sys, os, os.path, tempfile, subprocess, time, shutil, argparse
 
-PLAYLISTS_SUPPORTED = True
-PLAYLISTS_NOT_SUPPORTED = False
-
 players = [
-	("omxplayer", "omxplayer", PLAYLISTS_NOT_SUPPORTED),
-	("vlc", "vlc --file-caching 10000", PLAYLISTS_SUPPORTED),
-	("mplayer", "mplayer --cache-min=1", PLAYLISTS_SUPPORTED),
+	"omxplayer",
+	"vlc --file-caching 10000",
+	"mplayer --cache-min=1",
 ]
 
 parser = argparse.ArgumentParser()
 
 parser.add_argument("-p", "--player", action="store",
 	help="player to launch")
-parser.add_argument("-n", "--no-playlist", action="store_true",
-	help="don't build and pass an m3u playlist to player")
 parser.add_argument("URI", action="store",
 	help="magnet link or HTTP metadata URL to play")
 
@@ -29,22 +24,13 @@ def which(x):
 			return os.path.join(d, x)
 
 def find_player(players):
-	for player, cmd, pls in players:
-		if which(player):
-			return (which(player), cmd.split(" ")[1:], pls)
+	for player in players:
+		if which(player.split(" ", 1)[0]):
+			return player
 
-try:
-	if args.player:
-		player_cmd, player_args, playlist = find_player([(
-			args.player.split(" ")[0],
-			args.player,
-			not args.no_playlist)])
-	else:
-		player_cmd, player_args, playlist = find_player(players)
+cmd = find_player([args.player] if args.player else players)
 
-	if args.no_playlist:
-		playlist = False
-except:
+if not cmd:
 	print >>sys.stderr, "Could not find a player"
 	sys.exit(1)
 
@@ -76,17 +62,13 @@ if ret == 0:
 			lambda a: not is_sample(a) and is_video(a),
 			find_files(mountpoint)))
 
-		if len(media) > 1 and playlist:
-			item = os.path.join(d, "playlist.m3u")
-
-			with open(item, "w") as p:
-				p.writelines(["%s\n" % m for m in media])
+		if len(media) > 0:
+			ret = subprocess.call(
+				"%s %s" % (cmd, " ".join(media)),
+				shell=True,
+				stdin=sys.stdin)
 		else:
-			item = media[0]
-
-		ret = subprocess.call(
-			[player_cmd] + player_args + [item],
-			stdin=sys.stdin)
+			print >>sys.stderr, "No video media found"
 	except KeyboardInterrupt:
 		ret = 1
 	except:
