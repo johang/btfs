@@ -34,11 +34,7 @@ if not cmd:
 	print >>sys.stderr, "Could not find a player"
 	sys.exit(1)
 
-d = tempfile.mkdtemp(prefix="btplay-")
-
-mountpoint = os.path.join(d, "mnt")
-
-os.mkdir(mountpoint)
+mountpoint = tempfile.mkdtemp(prefix="btplay-")
 
 ret = subprocess.call(("btfs", args.URI, mountpoint, ))
 
@@ -76,6 +72,6 @@ if ret == 0:
 	finally:
 		subprocess.call(("fusermount", "-u", mountpoint, ))
 
-shutil.rmtree(d)
+shutil.rmtree(mountpoint)
 
 sys.exit(ret)
