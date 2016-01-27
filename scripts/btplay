@@ -4,8 +4,9 @@
 import sys, os, os.path, tempfile, subprocess, time, shutil, argparse
 
 players = [
-	"omxplayer",
+	"omxplayer --timeout 60",
 	"vlc --file-caching 10000",
+	"mpv --cache-min=1",
 	"mplayer --cache-min=1",
 ]
 
