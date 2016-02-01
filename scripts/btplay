@@ -71,7 +71,7 @@ if ret == 0:
 	except:
 		ret = 2
 	finally:
-		subprocess.call(("fusermount", "-u", mountpoint, ))
+		subprocess.call(("fusermount", "-z", "-u", mountpoint, ))
 
 shutil.rmtree(mountpoint)
 
