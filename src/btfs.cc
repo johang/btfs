@@ -512,6 +512,51 @@ btfs_init(struct fuse_conn_info *conn) {
 	se.announce_to_all_trackers = true;
 	se.announce_to_all_tiers = true;
 
+	if (params.proxy_hostname == NULL && params.proxy_type != NULL && strcmp(params.proxy_type, "i2p") == 0) {
+		params.proxy_hostname = "127.0.0.1";
+		params.proxy_port = 7656;
+	}
+
+	if (params.proxy_hostname != NULL && params.proxy_port == 0) {
+		params.proxy_port = 1080;
+	}
+	
+	if (params.proxy_hostname != NULL) {
+		se.force_proxy = true;
+		if (params.proxy_type == NULL) {
+			params.proxy_type = "socks5h";
+		}
+		libtorrent::proxy_settings::proxy_type libtorrent_proxy_type = libtorrent_proxy_types[params.proxy_type];
+		if (strcmp(params.proxy_type, "i2p") != 0) {
+			if (libtorrent_proxy_type == libtorrent::proxy_settings::none) { // None is the default value
+				fprintf(stderr, "Unkown proxy type");
+				exit(1);
+			}
+			if (params.proxy_username != NULL && params.proxy_password != NULL) {
+				libtorrent::proxy_settings::proxy_type new_type = libtorrent_authed_proxy_types[libtorrent_proxy_type];
+				if (new_type != libtorrent::proxy_settings::none) {
+					libtorrent_proxy_type = new_type;
+				}
+			}
+		}
+
+		libtorrent::proxy_settings proxy = session->proxy();
+		proxy.hostname = params.proxy_hostname;
+		proxy.port = params.proxy_port;
+		if (params.proxy_username) {
+			proxy.username = params.proxy_username;
+		}
+		if (params.proxy_password) {
+			proxy.password = params.proxy_password;
+		}
+		if (strcmp(params.proxy_type, "i2p") == 0) {
+			session->set_i2p_proxy(proxy);
+		} else {
+			proxy.type = libtorrent_proxy_type;
+			session->set_proxy(proxy);
+		}
+	}
+
 	session->set_settings(se);
 	session->async_add_torrent(*p);
 
@@ -604,6 +649,31 @@ populate_metadata(libtorrent::add_torrent_params& p, const char *arg) {
 		curl_easy_setopt(ch, CURLOPT_WRITEDATA, (void *) &output); 
 		curl_easy_setopt(ch, CURLOPT_USERAGENT, "btfs/" VERSION);
 		curl_easy_setopt(ch, CURLOPT_FOLLOWLOCATION, 1);
+		if (params.proxy_type != NULL && strcmp(params.proxy_type, "i2p") == 0) {
+			if (params.i2p_http_proxy) {
+				curl_easy_setopt(ch, CURLOPT_PROXY, params.i2p_http_proxy);
+			} else {
+				curl_easy_setopt(ch, CURLOPT_PROXY, "127.0.0.1:4444");
+			}
+			curl_easy_setopt(ch, CURLOPT_PROXYTYPE, CURLPROXY_HTTP);
+		} else if (params.proxy_hostname != NULL) {
+			if (params.proxy_type == NULL) {
+				params.proxy_type = "socks5h";
+			}
+			std::string proxy_string = "";
+			proxy_string += params.proxy_type;
+			proxy_string += "://";
+			proxy_string += params.proxy_hostname;
+			proxy_string += ":";
+			proxy_string += params.proxy_port;
+			curl_easy_setopt(ch, CURLOPT_PROXY, proxy_string.c_str());
+			if (params.proxy_username != NULL) {
+				curl_easy_setopt(ch, CURLOPT_PROXYUSERNAME, params.proxy_username);
+			}
+			if (params.proxy_password != NULL) {
+				curl_easy_setopt(ch, CURLOPT_PROXYPASSWORD, params.proxy_password);
+			}
+		}
 
 		CURLcode res = curl_easy_perform(ch);
 
@@ -658,14 +728,20 @@ populate_metadata(libtorrent::add_torrent_params& p, const char *arg) {
 #define BTFS_OPT(t, p, v) { t, offsetof(struct btfs_params, p), v }
 
 static const struct fuse_opt btfs_opts[] = {
-	BTFS_OPT("-v",            version,     1),
-	BTFS_OPT("--version",     version,     1),
-	BTFS_OPT("-h",            help,        1),
-	BTFS_OPT("--help",        help,        1),
-	BTFS_OPT("-b",            browse_only, 1),
-	BTFS_OPT("--browse-only", browse_only, 1),
-	BTFS_OPT("-k",            keep,        1),
-	BTFS_OPT("--keep",        keep,        1),
+	BTFS_OPT("-v",                  version,        1),
+	BTFS_OPT("--version",           version,        1),
+	BTFS_OPT("-h",                  help,           1),
+	BTFS_OPT("--help",              help,           1),
+	BTFS_OPT("-b",                  browse_only,    1),
+	BTFS_OPT("--browse-only",       browse_only,    1),
+	BTFS_OPT("-k",                  keep,           1),
+	BTFS_OPT("--keep",              keep,           1),
+	BTFS_OPT("--proxy-hostname=%s", proxy_hostname, 4),
+	BTFS_OPT("--proxy-port=%u",     proxy_port,     4),
+	BTFS_OPT("--proxy-type=%s",     proxy_type,     4),
+	BTFS_OPT("--proxy-username=%s", proxy_username, 4),
+	BTFS_OPT("--proxy-password=%s", proxy_password, 4),
+	BTFS_OPT("--i2p-http-proxy=%s", i2p_http_proxy, 4),
 	FUSE_OPT_END
 };
 
@@ -727,6 +803,15 @@ main(int argc, char *argv[]) {
 		printf("    --help -h              show this message\n");
 		printf("    --browse-only -b       download metadata only\n");
 		printf("    --keep -k              keep files after unmount\n");
+		printf("    --proxy= -p=           use a proxy with the given address\n");
+		printf("                             should be in the form of host or host:port\n");
+		printf("    --proxy-type=          set the type of proxy (defaults to socks5h)\n");
+		printf("    --proxy-username=      login to the proxy with the given username\n");
+		printf("    --proxy-password=      login to the proxy with the given password\n");
+		printf("                             As a process argument, this is readable\n");
+		printf("                             by any user by looking at a list of processes\n");
+		printf("    --i2p-http-proxy=      provide an http proxy for use by curl in place of i2p\n");
+		printf("                             Only used if the proxy type is set to i2p\n");
 		printf("\n");
 
 		// Let FUSE print more help
