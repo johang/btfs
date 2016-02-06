@@ -48,7 +48,7 @@ def is_sample(x):
 	return "sample" in [x.lower() for x in x.split(os.sep)]
 
 def is_video(x):
-	return any([x.lower().endswith(e) for e in (".mp4", ".mkv", ".avi")])
+	return any([x.lower().endswith(e) for e in (".mp4", ".mkv", ".avi", ".mpg", ".mpeg", ".flv", ".webm")])
 
 if ret == 0:
 	try:
