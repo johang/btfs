@@ -105,7 +105,7 @@ advance() {
 	jump(cursor, 0);
 }
 
-Read::Read(char *buf, int index, int offset, int size) {
+Read::Read(char *buf, int index, off_t offset, size_t size) {
 #if LIBTORRENT_VERSION_NUM < 10000
 	libtorrent::torrent_info ti = handle.get_torrent_info();
 #else
@@ -116,7 +116,7 @@ Read::Read(char *buf, int index, int offset, int size) {
 
 	while (size > 0 && offset < file.size) {
 		libtorrent::peer_request part = ti.map_file(index, offset,
-			size);
+			(int) size);
 
 		part.length = std::min(
 			ti.piece_size(part.piece) - part.start,
@@ -124,7 +124,7 @@ Read::Read(char *buf, int index, int offset, int size) {
 
 		parts.push_back(Part(part, buf));
 
-		size -= part.length;
+		size -= (size_t) part.length;
 		offset += part.length;
 		buf += part.length;
 	}
@@ -134,7 +134,7 @@ void Read::copy(int piece, char *buffer, int size) {
 	for (parts_iter i = parts.begin(); i != parts.end(); ++i) {
 		if (i->part.piece == piece && !i->filled)
 			i->filled = (memcpy(i->buf, buffer + i->part.start,
-				i->part.length)) != NULL;
+				(size_t) i->part.length)) != NULL;
 	}
 }
 
@@ -616,7 +616,7 @@ populate_metadata(libtorrent::add_torrent_params& p, const char *arg) {
 		libtorrent::error_code ec;
 
 		p.ti = new libtorrent::torrent_info((const char *) output.buf,
-			output.size, ec);
+			(int) output.size, ec);
 
 		if (ec)
 			RETV(fprintf(stderr, "Parse metadata failed: %s\n",
