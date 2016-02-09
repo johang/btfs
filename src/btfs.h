@@ -116,6 +116,8 @@ struct btfs_params {
 	int help;
 	int browse_only;
 	int keep;
+	int min_port;
+	int max_port;
 	const char *metadata;
 };
 

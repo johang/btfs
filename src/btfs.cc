@@ -498,7 +498,7 @@ btfs_init(struct fuse_conn_info *conn) {
 			LIBTORRENT_VERSION_MINOR,
 			0,
 			0),
-		std::make_pair(6881, 6889),
+		std::make_pair(params.min_port, params.max_port),
 		"0.0.0.0",
 		flags,
 		alerts);
@@ -664,14 +664,16 @@ populate_metadata(libtorrent::add_torrent_params& p, const char *arg) {
 #define BTFS_OPT(t, p, v) { t, offsetof(struct btfs_params, p), v }
 
 static const struct fuse_opt btfs_opts[] = {
-	BTFS_OPT("-v",            version,     1),
-	BTFS_OPT("--version",     version,     1),
-	BTFS_OPT("-h",            help,        1),
-	BTFS_OPT("--help",        help,        1),
-	BTFS_OPT("-b",            browse_only, 1),
-	BTFS_OPT("--browse-only", browse_only, 1),
-	BTFS_OPT("-k",            keep,        1),
-	BTFS_OPT("--keep",        keep,        1),
+	BTFS_OPT("-v",                           version,              1),
+	BTFS_OPT("--version",                    version,              1),
+	BTFS_OPT("-h",                           help,                 1),
+	BTFS_OPT("--help",                       help,                 1),
+	BTFS_OPT("-b",                           browse_only,          1),
+	BTFS_OPT("--browse-only",                browse_only,          1),
+	BTFS_OPT("-k",                           keep,                 1),
+	BTFS_OPT("--keep",                       keep,                 1),
+	BTFS_OPT("--min-port=%lu",               min_port,             4),
+	BTFS_OPT("--max-port=%lu",               max_port,             4),
 	FUSE_OPT_END
 };
 
@@ -691,6 +693,20 @@ btfs_process_arg(void *data, const char *arg, int key,
 	}
 
 	return 1;
+}
+
+static void
+print_help() {
+	printf("usage: " PACKAGE " [options] metadata mountpoint\n");
+	printf("\n");
+	printf("btfs options:\n");
+	printf("    --version -v           show version information\n");
+	printf("    --help -h              show this message\n");
+	printf("    --browse-only -b       download metadata only\n");
+	printf("    --keep -k              keep files after unmount\n");
+	printf("    --min-port=N           start of listen port range\n");
+	printf("    --max-port=N           end of listen port range\n");
+	printf("\n");
 }
 
 int
@@ -725,15 +741,7 @@ main(int argc, char *argv[]) {
 	}
 
 	if (params.help) {
-		// Print usage
-		printf("usage: " PACKAGE " [options] metadata mountpoint\n");
-		printf("\n");
-		printf("btfs options:\n");
-		printf("    --version -v           show version information\n");
-		printf("    --help -h              show this message\n");
-		printf("    --browse-only -b       download metadata only\n");
-		printf("    --keep -k              keep files after unmount\n");
-		printf("\n");
+		print_help();
 
 		// Let FUSE print more help
 		fuse_opt_add_arg(&args, "-ho");
@@ -741,6 +749,19 @@ main(int argc, char *argv[]) {
 
 		return 0;
 	}
+
+	if (params.min_port == 0 && params.max_port == 0) {
+		// Default ports are the standard Bittorrent range
+		params.min_port = 6881;
+		params.max_port = 6889;
+	} else if (params.min_port == 0) {
+		params.min_port = 1024;
+	} else if (params.max_port == 0) {
+		params.max_port = 65535;
+	}
+
+	if (params.min_port > params.max_port)
+		RETV(fprintf(stderr, "Invalid port range\n"), -1);
 
 	std::string target;
 
