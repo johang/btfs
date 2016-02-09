@@ -479,6 +479,10 @@ btfs_init(struct fuse_conn_info *conn) {
 	libtorrent::add_torrent_params *p = (libtorrent::add_torrent_params *)
 		fuse_get_context()->private_data;
 
+	int flags =
+		libtorrent::session::add_default_plugins |
+		libtorrent::session::start_default_features;
+
 	int alerts =
 		libtorrent::alert::tracker_notification |
 		libtorrent::alert::stats_notification |
@@ -496,7 +500,7 @@ btfs_init(struct fuse_conn_info *conn) {
 			0),
 		std::make_pair(6881, 6889),
 		"0.0.0.0",
-		libtorrent::session::add_default_plugins,
+		flags,
 		alerts);
 
 	pthread_create(&alert_thread, NULL, alert_queue_loop,
@@ -513,6 +517,8 @@ btfs_init(struct fuse_conn_info *conn) {
 	se.announce_to_all_tiers = true;
 
 	session->set_settings(se);
+	session->add_dht_router(std::make_pair("router.bittorrent.com", 6881));
+	session->add_dht_router(std::make_pair("router.utorrent.com", 6881));
 	session->async_add_torrent(*p);
 
 	pthread_mutex_unlock(&lock);
