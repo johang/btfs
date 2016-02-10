@@ -118,6 +118,8 @@ struct btfs_params {
 	int keep;
 	int min_port;
 	int max_port;
+	int max_download_rate;
+	int max_upload_rate;
 	const char *metadata;
 };
 

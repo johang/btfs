@@ -515,6 +515,8 @@ btfs_init(struct fuse_conn_info *conn) {
 	se.strict_end_game_mode = false;
 	se.announce_to_all_trackers = true;
 	se.announce_to_all_tiers = true;
+	se.download_rate_limit = params.max_download_rate * 1024;
+	se.upload_rate_limit = params.max_upload_rate * 1024;
 
 	session->set_settings(se);
 	session->add_dht_router(std::make_pair("router.bittorrent.com", 6881));
@@ -674,6 +676,8 @@ static const struct fuse_opt btfs_opts[] = {
 	BTFS_OPT("--keep",                       keep,                 1),
 	BTFS_OPT("--min-port=%lu",               min_port,             4),
 	BTFS_OPT("--max-port=%lu",               max_port,             4),
+	BTFS_OPT("--max-download-rate=%lu",      max_download_rate,    4),
+	BTFS_OPT("--max-upload-rate=%lu",        max_upload_rate,      4),
 	FUSE_OPT_END
 };
 
@@ -706,6 +710,8 @@ print_help() {
 	printf("    --keep -k              keep files after unmount\n");
 	printf("    --min-port=N           start of listen port range\n");
 	printf("    --max-port=N           end of listen port range\n");
+	printf("    --max-download-rate=N  max download rate (in kB/s)\n");
+	printf("    --max-upload-rate=N    max upload rate (in kB/s)\n");
 	printf("\n");
 }
 
