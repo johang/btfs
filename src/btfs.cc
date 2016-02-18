@@ -311,6 +311,9 @@ handle_alert(libtorrent::alert *a, Log *log) {
 	case libtorrent::tracker_reply_alert::alert_type:
 	case libtorrent::tracker_warning_alert::alert_type:
 	case libtorrent::tracker_error_alert::alert_type:
+	case libtorrent::dht_bootstrap_alert::alert_type:
+	case libtorrent::dht_announce_alert::alert_type:
+	case libtorrent::dht_reply_alert::alert_type:
 		*log << a->message() << std::endl;
 		break;
 	case libtorrent::stats_alert::alert_type:
@@ -489,7 +492,8 @@ btfs_init(struct fuse_conn_info *conn) {
 		libtorrent::alert::storage_notification |
 		libtorrent::alert::progress_notification |
 		libtorrent::alert::status_notification |
-		libtorrent::alert::error_notification;
+		libtorrent::alert::error_notification |
+		libtorrent::alert::dht_notification;
 
 	session = new libtorrent::session(
 		libtorrent::fingerprint(
