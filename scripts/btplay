@@ -1,78 +1,100 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # copyright 2015 johan gunnarsson <johan.gunnarsson@gmail.com>
 
-import sys, os, os.path, tempfile, subprocess, time, shutil, argparse
+from __future__ import print_function
 
-players = [
-	"omxplayer --timeout 60",
-	"vlc --file-caching 10000",
-	"mpv --cache-min=1",
-	"mplayer --cache-min=1",
-]
+import sys
+import os
+import os.path
+import tempfile
+import shutil
+import time
+import subprocess
+import shlex
+import argparse
 
-parser = argparse.ArgumentParser()
 
-parser.add_argument("-p", "--player", action="store",
-	help="player to launch")
-parser.add_argument("URI", action="store",
-	help="magnet link or HTTP metadata URL to play")
+extensions = ("mp4", "m4v", "mkv", "avi",
+              "mpg", "mpeg", "flv", "webm")
 
-args = parser.parse_args()
+players = (("omxplayer", "--timeout 60"),
+           ("vlc", "--file-caching 10000"),
+           ("mpv", ),
+           ("mplayer", "--cache-min=1"))
+
 
 def which(x):
-	for d in os.getenv("PATH", "").split(":"):
-		if os.path.exists(os.path.join(d, x)):
-			return os.path.join(d, x)
+    for d in os.getenv("PATH", "").split(":"):
+        if os.path.exists(os.path.join(d, x)):
+            return os.path.join(d, x)
+
 
 def find_player(players):
-	for player in players:
-		if which(player.split(" ", 1)[0]):
-			return player
+    for player in players:
+        if which(player[0]):
+            return player
 
-cmd = find_player([args.player] if args.player else players)
 
-if not cmd:
-	print >>sys.stderr, "Could not find a player"
-	sys.exit(1)
+def find_files(filepath):
+    for dirpath, dnames, fnames in os.walk(filepath):
+        for f in fnames:
+            yield os.path.join(dirpath, f)
 
-mountpoint = tempfile.mkdtemp(prefix="btplay-")
 
-ret = subprocess.call(("btfs", args.URI, mountpoint, ))
+def is_sample(filename):
+    return "sample" in [i.lower() for i in filename.split(os.sep)]
 
-def find_files(p):
-	for dirpath, dnames, fnames in os.walk(p):
-		for f in fnames:
-			yield os.path.join(dirpath, f)
 
-def is_sample(x):
-	return "sample" in [x.lower() for x in x.split(os.sep)]
+def is_video(filename):
+    return any(filename.lower().endswith(i) for i in extensions)
 
-def is_video(x):
-	return any([x.lower().endswith(e) for e in (".mp4", ".mkv", ".avi", ".mpg", ".mpeg", ".flv", ".webm")])
 
-if ret == 0:
-	try:
-		while len(os.listdir(mountpoint)) <= 0:
-			time.sleep(0.25)
+def exit(tempdir, status):
+    shutil.rmtree(tempdir)
+    sys.exit(status)
 
-		media = sorted(filter(
-			lambda a: not is_sample(a) and is_video(a),
-			find_files(mountpoint)))
 
-		if len(media) > 0:
-			ret = subprocess.call(
-				"%s %s" % (cmd, " ".join(media)),
-				shell=True,
-				stdin=sys.stdin)
-		else:
-			print >>sys.stderr, "No video media found"
-	except KeyboardInterrupt:
-		ret = 1
-	except:
-		ret = 2
-	finally:
-		subprocess.call(("fusermount", "-z", "-u", mountpoint, ))
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-p", "--player",
+                        action="store", help="player to launch")
+    parser.add_argument("URI", action="store",
+                        help="magnet link or HTTP metadata URL to play")
+    args = parser.parse_args()
 
-shutil.rmtree(mountpoint)
+    player = find_player([args.player] if args.player else players)
 
-sys.exit(ret)
+    if not player:
+        print("Could not find a player", file=sys.stderr)
+        sys.exit(1)
+
+    mountpoint = tempfile.mkdtemp(prefix="btplay-")
+    failed = subprocess.call(["btfs", args.URI, mountpoint])
+
+    if failed:
+        exit(mountpoint, failed)
+
+    try:
+        while not os.listdir(mountpoint):
+            time.sleep(0.25)
+
+        media = sorted(i for i in find_files(mountpoint)
+                       if not is_sample(i) and is_video(i))
+
+        if media:
+            status = subprocess.call(list(player) + media)
+        else:
+            print("No video media found", file=sys.stderr)
+    except KeyboardInterrupt:
+        status = 1
+    except Exception as e:
+        print("Error:", e, file=sys.stderr)
+        status = 2
+    finally:
+        subprocess.call(["fusermount", "-z", "-u", mountpoint])
+
+    exit(mountpoint, status)
+
+
+if __name__ == '__main__':
+    main()
