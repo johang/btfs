@@ -22,11 +22,10 @@ players = (("omxplayer", "--timeout 60"),
            ("mplayer", "--cache-min=1"))
 
 
-def which(x):
-    for d in os.getenv("PATH", "").split(":"):
-        if os.path.exists(os.path.join(d, x)):
-            return os.path.join(d, x)
-
+def which(name):
+    return subprocess.call("type " + name, shell=True,
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE) == 0
 
 def find_player(players):
     for player in players:
