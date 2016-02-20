@@ -60,7 +60,7 @@ def main():
                         help="magnet link or HTTP metadata URL to play")
     args = parser.parse_args()
 
-    player = find_player([args.player] if args.player else players)
+    player = find_player([args.player.split()] if args.player else players)
 
     if not player:
         print("Could not find a player", file=sys.stderr)
