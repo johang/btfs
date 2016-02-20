@@ -40,7 +40,7 @@ def find_files(filepath):
 
 
 def is_sample(filename):
-    return "sample" in [i.lower() for i in filename.split(os.sep)]
+    return "sample" in os.path.basename(filename).lower()
 
 
 def is_video(filename):
