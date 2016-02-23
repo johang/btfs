@@ -16,10 +16,10 @@ import argparse
 extensions = ("mp4", "m4v", "mkv", "avi",
               "mpg", "mpeg", "flv", "webm")
 
-players = (("omxplayer", "--timeout 60"),
-           ("vlc", "--file-caching 10000"),
+players = (("omxplayer", "--timeout", "60"),
+           ("vlc", "--file-caching", "10000"),
            ("mpv", ),
-           ("mplayer", "--cache-min=1"))
+           ("mplayer", ))
 
 
 def which(x):
