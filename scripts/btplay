@@ -83,8 +83,8 @@ def main():
         if media:
             status = subprocess.call(list(player) + media)
         else:
-            status = 1
             print("No video media found", file=sys.stderr)
+            status = 3
     except KeyboardInterrupt:
         status = 1
     except Exception as e:
