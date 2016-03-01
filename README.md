@@ -25,6 +25,10 @@ To unmount and shutdown:
 
     $ sudo pacman -S btfs
 
+## Installing on OS X
+
+BTFS is known to work on Apple's OS X. See [pull request #5](https://github.com/johang/btfs/pull/5) for more information.
+
 ## Dependencies (on Linux)
 
 * fuse ("fuse" in Debian/Ubuntu)
