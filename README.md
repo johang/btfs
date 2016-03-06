@@ -25,9 +25,20 @@ To unmount and shutdown:
 
     $ sudo pacman -S btfs
 
-## Installing on OS X
+## Building on OS X
 
-BTFS is known to work on Apple's OS X. See [pull request #5](https://github.com/johang/btfs/pull/5) for more information.
+Use `brew` to get the dependencies and clone the project.
+
+    $ brew install Caskroom/cask/osxfuse libtorrent-rasterbar autoconf automake pkg-config
+    $ git clone https://github.com/johang/btfs.git btfs
+    $ cd btfs
+
+Open the file `configure.ac` and replace `fuse >= 2.8.0` with `fuse >= 2.7.3` (**Only if you have the latest osxfuse version!**, see why on [pull request #5](https://github.com/johang/btfs/pull/5)). Then:
+
+    $ autoreconf -i
+    $ ./configure
+    $ make
+    $ sudo make install
 
 ## Dependencies (on Linux)
 
