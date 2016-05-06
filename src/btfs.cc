@@ -512,7 +512,7 @@ btfs_init(struct fuse_conn_info *conn) {
 	pthread_create(&alert_thread, NULL, alert_queue_loop,
 		new Log(p->save_path + "/../log.txt"));
 
-#ifndef __APPLE__
+#ifdef HAVE_PTHREAD_SETNAME_NP
 	pthread_setname_np(alert_thread, "alert");
 #endif
 

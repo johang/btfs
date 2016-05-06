@@ -23,4 +23,7 @@ AC_TYPE_SIZE_T
 # Checks for library functions.
 AC_CHECK_FUNCS([memset mkdir realpath strdup])
 
+# Check for unportable pthread_setname_np()
+AC_CHECK_LIB(pthread, pthread_setname_np)
+
 AC_OUTPUT(Makefile src/Makefile scripts/Makefile)
