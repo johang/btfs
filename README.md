@@ -39,7 +39,7 @@ BTFS has a formula in the [`homebrew/fuse`](https://github.com/Homebrew/homebrew
 
 ## Building from git on a recent Debian/Ubuntu
 
-    $ sudo apt-get install autoconf automake libfuse-dev libtorrent-rasterbar-dev libcurl4-openssl-dev
+    $ sudo apt-get install autoconf automake libfuse-dev libtorrent-rasterbar-dev libcurl4-openssl-dev g++
     $ git clone https://github.com/johang/btfs.git btfs
     $ cd btfs
     $ autoreconf -i
