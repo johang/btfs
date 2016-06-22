@@ -629,8 +629,13 @@ populate_metadata(libtorrent::add_torrent_params& p, const char *arg) {
 
 		libtorrent::error_code ec;
 
+#if LIBTORRENT_VERSION_NUM < 10100
 		p.ti = new libtorrent::torrent_info((const char *) output.buf,
 			(int) output.size, ec);
+#else
+		p.ti = boost::make_shared<libtorrent::torrent_info>((const char *) output.buf,
+			(int) output.size, ec);
+#endif
 
 		if (ec)
 			RETV(fprintf(stderr, "Parse metadata failed: %s\n",
@@ -654,7 +659,11 @@ populate_metadata(libtorrent::add_torrent_params& p, const char *arg) {
 
 		libtorrent::error_code ec;
 
+#if LIBTORRENT_VERSION_NUM < 10100
 		p.ti = new libtorrent::torrent_info(r, ec);
+#else
+		p.ti = boost::make_shared<libtorrent::torrent_info>(r, ec);
+#endif
 
 		free(r);
 
