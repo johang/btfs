@@ -368,6 +368,7 @@ alert_queue_loop(void *data) {
 		if (!session->wait_for_alert(libtorrent::seconds(1)))
 			continue;
 
+#if LIBTORRENT_VERSION_NUM < 10100
 		std::deque<libtorrent::alert*> alerts;
 
 		session->pop_alerts(&alerts);
@@ -376,6 +377,16 @@ alert_queue_loop(void *data) {
 				alerts.begin(); i != alerts.end(); ++i) {
 			handle_alert(*i, (Log *) data);
 		}
+#else
+		std::vector<libtorrent::alert*> alerts;
+
+		session->pop_alerts(&alerts);
+
+		for (std::vector<libtorrent::alert*>::iterator i =
+				alerts.begin(); i != alerts.end(); ++i) {
+			handle_alert(*i, (Log *) data);
+		}
+#endif
 	}
 
 	pthread_cleanup_pop(1);
