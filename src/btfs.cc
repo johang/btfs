@@ -29,6 +29,11 @@ along with BTFS.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <fuse.h>
 
+// The below pragma lines will silence lots of compiler warnings in the
+// libtorrent headers file. Not btfs' fault.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wconversion"
 #include <libtorrent/torrent_info.hpp>
 #include <libtorrent/session.hpp>
 #include <libtorrent/alert.hpp>
@@ -36,6 +41,7 @@ along with BTFS.  If not, see <http://www.gnu.org/licenses/>.
 #include <libtorrent/alert_types.hpp>
 #include <libtorrent/magnet_uri.hpp>
 #include <libtorrent/version.hpp>
+#pragma GCC diagnostic pop
 
 #include <curl/curl.h>
 
