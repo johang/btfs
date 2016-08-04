@@ -42,6 +42,7 @@ along with BTFS.  If not, see <http://www.gnu.org/licenses/>.
 #include "btfs.h"
 
 #define RETV(s, v) { s; return v; };
+#define STRINGIFY(s) #s
 
 using namespace btfs;
 
@@ -525,16 +526,51 @@ btfs_init(struct fuse_conn_info *conn) {
 		"0.0.0.0",
 		flags,
 		alerts);
+
+	libtorrent::session_settings se = session->settings();
+
+	se.strict_end_game_mode = false;
+	se.announce_to_all_trackers = true;
+	se.announce_to_all_tiers = true;
+	se.download_rate_limit = params.max_download_rate * 1024;
+	se.upload_rate_limit = params.max_upload_rate * 1024;
+
+	session->set_settings(se);
+	session->add_dht_router(std::make_pair("router.bittorrent.com", 6881));
+	session->add_dht_router(std::make_pair("router.utorrent.com", 6881));
+	session->async_add_torrent(*p);
 #else
 	libtorrent::settings_pack pack;
-	pack.set_str(libtorrent::settings_pack::listen_interfaces, "0.0.0.0:6881");
-	pack.set_bool(libtorrent::settings_pack::strict_end_game_mode, false);
-	pack.set_bool(libtorrent::settings_pack::announce_to_all_trackers, true);
-	pack.set_bool(libtorrent::settings_pack::announce_to_all_tiers, true);
-	pack.set_int(libtorrent::settings_pack::download_rate_limit, params.max_download_rate * 1024);
-	pack.set_int(libtorrent::settings_pack::upload_rate_limit, params.max_upload_rate * 1024);
-	pack.set_int(libtorrent::settings_pack::alert_mask, alerts);
+
+	std::ostringstream interfaces;
+
+	// First port
+	interfaces << "0.0.0.0:" << params.min_port;
+
+	// Possibly more ports, but at most 5
+	for (int i = params.min_port + 1; i <= params.max_port &&
+			i < params.min_port + 5; i++)
+		interfaces << ",0.0.0.0:" << i;
+
+	std::string fingerprint =
+		"LT"
+		STRINGIFY(LIBTORRENT_VERSION_MAJOR)
+		STRINGIFY(LIBTORRENT_VERSION_MINOR)
+		"00";
+
+	pack.set_str(pack.listen_interfaces, interfaces.str());
+	pack.set_bool(pack.strict_end_game_mode, false);
+	pack.set_bool(pack.announce_to_all_trackers, true);
+	pack.set_bool(pack.announce_to_all_tiers, true);
+	pack.set_int(pack.download_rate_limit, params.max_download_rate * 1024);
+	pack.set_int(pack.upload_rate_limit, params.max_upload_rate * 1024);
+	pack.set_int(pack.alert_mask, alerts);
+
 	libtorrent::session session(pack, flags);
+
+	session.add_dht_router(std::make_pair("router.bittorrent.com", 6881));
+	session.add_dht_router(std::make_pair("router.utorrent.com", 6881));
+	session.add_torrent(*p);
 #endif
 
 	pthread_create(&alert_thread, NULL, alert_queue_loop,
@@ -544,23 +580,6 @@ btfs_init(struct fuse_conn_info *conn) {
 	pthread_setname_np(alert_thread, "alert");
 #endif
 
-#if LIBTORRENT_VERSION_NUM < 10100
-	libtorrent::session_settings se = session->settings();
-	se.strict_end_game_mode = false;
-	se.announce_to_all_trackers = true;
-	se.announce_to_all_tiers = true;
-	se.download_rate_limit = params.max_download_rate * 1024;
-	se.upload_rate_limit = params.max_upload_rate * 1024;
-	session->set_settings(se);
-#endif
-
-#if LIBTORRENT_VERSION_NUM < 10100
-	session->add_dht_router(std::make_pair("router.bittorrent.com", 6881));
-	session->add_dht_router(std::make_pair("router.utorrent.com", 6881));
-	session->async_add_torrent(*p);
-#else
-	session.add_torrent(*p);
-#endif
 	pthread_mutex_unlock(&lock);
 
 	return NULL;
@@ -665,8 +684,9 @@ populate_metadata(libtorrent::add_torrent_params& p, const char *arg) {
 		p.ti = new libtorrent::torrent_info((const char *) output.buf,
 			(int) output.size, ec);
 #else
-		p.ti = boost::make_shared<libtorrent::torrent_info>((const char *) output.buf,
-			(int) output.size, boost::ref(ec));
+		p.ti = boost::make_shared<libtorrent::torrent_info>(
+			(const char *) output.buf, (int) output.size,
+			boost::ref(ec));
 #endif
 
 		if (ec)
@@ -694,7 +714,8 @@ populate_metadata(libtorrent::add_torrent_params& p, const char *arg) {
 #if LIBTORRENT_VERSION_NUM < 10100
 		p.ti = new libtorrent::torrent_info(r, ec);
 #else
-		p.ti = boost::make_shared<libtorrent::torrent_info>(r, boost::ref(ec));
+		p.ti = boost::make_shared<libtorrent::torrent_info>(r,
+			boost::ref(ec));
 #endif
 
 		free(r);
