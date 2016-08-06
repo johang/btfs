@@ -555,6 +555,7 @@ btfs_init(struct fuse_conn_info *conn) {
 	session->set_settings(se);
 	session->add_dht_router(std::make_pair("router.bittorrent.com", 6881));
 	session->add_dht_router(std::make_pair("router.utorrent.com", 6881));
+	session->add_dht_router(std::make_pair("dht.transmissionbt.com", 6881));
 	session->async_add_torrent(*p);
 #else
 	libtorrent::settings_pack pack;
@@ -587,6 +588,7 @@ btfs_init(struct fuse_conn_info *conn) {
 
 	session.add_dht_router(std::make_pair("router.bittorrent.com", 6881));
 	session.add_dht_router(std::make_pair("router.utorrent.com", 6881));
+	session.add_dht_router(std::make_pair("dht.transmissionbt.com", 6881));
 	session.add_torrent(*p);
 #endif
 
