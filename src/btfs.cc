@@ -343,7 +343,9 @@ handle_alert(libtorrent::alert *a, Log *log) {
 		break;
 	}
 
+#if LIBTORRENT_VERSION_NUM < 10100
 	delete a;
+#endif
 }
 
 
@@ -584,12 +586,12 @@ btfs_init(struct fuse_conn_info *conn) {
 	pack.set_int(pack.upload_rate_limit, params.max_upload_rate * 1024);
 	pack.set_int(pack.alert_mask, alerts);
 
-	libtorrent::session session(pack, flags);
+	session = new libtorrent::session(pack, flags);
 
-	session.add_dht_router(std::make_pair("router.bittorrent.com", 6881));
-	session.add_dht_router(std::make_pair("router.utorrent.com", 6881));
-	session.add_dht_router(std::make_pair("dht.transmissionbt.com", 6881));
-	session.add_torrent(*p);
+	session->add_dht_router(std::make_pair("router.bittorrent.com", 6881));
+	session->add_dht_router(std::make_pair("router.utorrent.com", 6881));
+	session->add_dht_router(std::make_pair("dht.transmissionbt.com", 6881));
+	session->add_torrent(*p);
 #endif
 
 	pthread_create(&alert_thread, NULL, alert_queue_loop,
