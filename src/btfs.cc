@@ -69,6 +69,9 @@ std::map<std::string,std::set<std::string> > dirs;
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t signal_cond = PTHREAD_COND_INITIALIZER;
 
+// Time used as "last modified" time
+time_t time_of_mount;
+
 static struct btfs_params params;
 
 static bool
@@ -417,6 +420,7 @@ btfs_getattr(const char *path, struct stat *stbuf) {
 
 	stbuf->st_uid = getuid();
 	stbuf->st_gid = getgid();
+	stbuf->st_mtime = time_of_mount;
 
 	if (strcmp(path, "/") == 0 || is_dir(path)) {
 		stbuf->st_mode = S_IFDIR | 0755;
@@ -515,6 +519,8 @@ btfs_read(const char *path, char *buf, size_t size, off_t offset,
 static void *
 btfs_init(struct fuse_conn_info *conn) {
 	pthread_mutex_lock(&lock);
+
+	time_of_mount = time(NULL);
 
 	libtorrent::add_torrent_params *p = (libtorrent::add_torrent_params *)
 		fuse_get_context()->private_data;
