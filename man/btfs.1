@@ -24,6 +24,18 @@ download metadata only
 .TP
 \fB\-k\fR   \fB\-\-keep\fR
 keep files after unmount
+.TP
+\fB\-\-min-port=\fIPORT\fR
+start of listen port range
+.TP
+\fB\-\-max-port=\fIPORT\fR
+end of listen port range
+.TP
+\fB\-\-max-download-rate=\fIRATE\fR
+maximum download rate (in kilobytes per second)
+.TP
+\fB\-\-max-upload-rate=\fIRATE\fR
+maximum upload rate (in kilobytes per second)
 .SH EXAMPLES
 mounting a torrent file:
   btfs video.torrent ~/mnt
