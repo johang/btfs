@@ -831,8 +831,8 @@ main(int argc, char *argv[]) {
 		params.help = 1;
 
 	if (params.version) {
-		// Print version
 		printf(PACKAGE " version: " VERSION "\n");
+		printf("libtorrent version: " LIBTORRENT_VERSION "\n");
 
 		// Let FUSE print more versions
 		fuse_opt_add_arg(&args, "--version");
