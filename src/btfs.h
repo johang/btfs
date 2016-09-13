@@ -106,11 +106,6 @@ private:
 	std::string path;
 };
 
-enum {
-	KEY_VERSION,
-	KEY_HELP,
-};
-
 struct btfs_params {
 	int version;
 	int help;
