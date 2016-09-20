@@ -96,7 +96,7 @@ def main():
                        if not is_sample(i) and is_video(i))
 
         if media:
-            status = subprocess.call(list(player) + media)
+            status = subprocess.call(list(player) + media, stdin=sys.stdin)
         else:
             print("No video media found", file=sys.stderr)
             status = 3
