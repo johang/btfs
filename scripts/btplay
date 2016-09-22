@@ -34,7 +34,10 @@ extensions = ("mp4", "m4v", "mkv", "avi",
 players = (("omxplayer", "--timeout", "60"),
            ("vlc", "--file-caching", "10000"),
            ("mpv", ),
-           ("mplayer", ))
+           ("mplayer", ),
+           ("totem", ),
+           ("parole", ),
+           ("dragon", ))
 
 
 def which(x):
