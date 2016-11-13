@@ -109,6 +109,7 @@ private:
 struct btfs_params {
 	int version;
 	int help;
+	int help_fuse;
 	int browse_only;
 	int keep;
 	int min_port;

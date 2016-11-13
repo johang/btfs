@@ -765,6 +765,7 @@ static const struct fuse_opt btfs_opts[] = {
 	BTFS_OPT("--version",                    version,              1),
 	BTFS_OPT("-h",                           help,                 1),
 	BTFS_OPT("--help",                       help,                 1),
+	BTFS_OPT("--help-fuse",                  help_fuse,            1),
 	BTFS_OPT("-b",                           browse_only,          1),
 	BTFS_OPT("--browse-only",                browse_only,          1),
 	BTFS_OPT("-k",                           keep,                 1),
@@ -801,13 +802,13 @@ print_help() {
 	printf("btfs options:\n");
 	printf("    --version -v           show version information\n");
 	printf("    --help -h              show this message\n");
+	printf("    --help-fuse            print all fuse options\n");
 	printf("    --browse-only -b       download metadata only\n");
 	printf("    --keep -k              keep files after unmount\n");
 	printf("    --min-port=N           start of listen port range\n");
 	printf("    --max-port=N           end of listen port range\n");
 	printf("    --max-download-rate=N  max download rate (in kB/s)\n");
 	printf("    --max-upload-rate=N    max upload rate (in kB/s)\n");
-	printf("\n");
 }
 
 int
@@ -841,12 +842,17 @@ main(int argc, char *argv[]) {
 		return 0;
 	}
 
-	if (params.help) {
+	if (params.help || params.help_fuse) {
+		// Print info about btfs' command line options
 		print_help();
 
-		// Let FUSE print more help
-		fuse_opt_add_arg(&args, "-ho");
-		fuse_main(args.argc, args.argv, &btfs_ops, NULL);
+		if (params.help_fuse) {
+			printf("\n");
+
+			// Let FUSE print more help
+			fuse_opt_add_arg(&args, "-ho");
+			fuse_main(args.argc, args.argv, &btfs_ops, NULL);
+		}
 
 		return 0;
 	}
