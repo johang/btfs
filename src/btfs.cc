@@ -440,6 +440,7 @@ btfs_getattr(const char *path, struct stat *stbuf) {
 		stbuf->st_mode = S_IFREG | 0444;
 		stbuf->st_size = file_size;
 	}
+	stbuf->st_mtime = time(NULL);
 
 	pthread_mutex_unlock(&lock);
 
