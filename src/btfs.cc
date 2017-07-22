@@ -584,6 +584,13 @@ btfs_init(struct fuse_conn_info *conn) {
 		STRINGIFY(LIBTORRENT_VERSION_MINOR)
 		"00";
 
+#if LIBTORRENT_VERSION_NUM >= 10100
+	pack.set_str(pack.dht_bootstrap_nodes,
+		"router.bittorrent.com:6881,"
+		"router.utorrent.com:6881,"
+		"dht.transmissionbt.com:6881");
+#endif
+
 	pack.set_str(pack.listen_interfaces, interfaces.str());
 	pack.set_bool(pack.strict_end_game_mode, false);
 	pack.set_bool(pack.announce_to_all_trackers, true);
@@ -594,9 +601,12 @@ btfs_init(struct fuse_conn_info *conn) {
 
 	session = new libtorrent::session(pack, flags);
 
+#if LIBTORRENT_VERSION_NUM < 10100
 	session->add_dht_router(std::make_pair("router.bittorrent.com", 6881));
 	session->add_dht_router(std::make_pair("router.utorrent.com", 6881));
 	session->add_dht_router(std::make_pair("dht.transmissionbt.com", 6881));
+#endif
+
 	session->add_torrent(*p);
 #endif
 
