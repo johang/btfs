@@ -41,6 +41,9 @@ along with BTFS.  If not, see <http://www.gnu.org/licenses/>.
 #include <libtorrent/alert_types.hpp>
 #include <libtorrent/magnet_uri.hpp>
 #include <libtorrent/version.hpp>
+#if LIBTORRENT_VERSION_NUM >= 10200
+#include <libtorrent/torrent_flags.hpp>
+#endif
 #pragma GCC diagnostic pop
 
 #include <curl/curl.h>
@@ -86,20 +89,16 @@ move_to_next_unfinished(int& piece, int num_pieces) {
 
 static void
 jump(int piece, int size) {
-#if LIBTORRENT_VERSION_NUM < 10000
-	libtorrent::torrent_info ti = handle.get_torrent_info();
-#else
-	libtorrent::torrent_info ti = *handle.torrent_file();
-#endif
+	auto ti = handle.torrent_file();
 
 	int tail = piece;
 
-	if (!move_to_next_unfinished(tail, ti.num_pieces()))
+	if (!move_to_next_unfinished(tail, ti->num_pieces()))
 		return;
 
 	cursor = tail;
 
-	int pl = ti.piece_length();
+	int pl = ti->piece_length();
 
 	for (int b = 0; b < 16 * pl; b += pl) {
 		handle.piece_priority(tail++, 7);
@@ -116,24 +115,20 @@ advance() {
 }
 
 Read::Read(char *buf, int index, off_t offset, size_t size) {
-#if LIBTORRENT_VERSION_NUM < 10000
-	libtorrent::torrent_info ti = handle.get_torrent_info();
-#else
-	libtorrent::torrent_info ti = *handle.torrent_file();
-#endif
+	auto ti = handle.torrent_file();
 
 #if LIBTORRENT_VERSION_NUM < 10100
-	int64_t file_size = ti.file_at(index).size;
+	int64_t file_size = ti->file_at(index).size;
 #else
-	int64_t file_size = ti.files().file_size(index);
+	int64_t file_size = ti->files().file_size(index);
 #endif
 
 	while (size > 0 && offset < file_size) {
-		libtorrent::peer_request part = ti.map_file(index, offset,
+		libtorrent::peer_request part = ti->map_file(index, offset,
 			(int) size);
 
 		part.length = std::min(
-			ti.piece_size(part.piece) - part.start,
+			ti->piece_size(part.piece) - part.start,
 			part.length);
 
 		parts.push_back(Part(part, buf));
@@ -199,25 +194,21 @@ static void
 setup() {
 	printf("Got metadata. Now ready to start downloading.\n");
 
-#if LIBTORRENT_VERSION_NUM < 10000
-	libtorrent::torrent_info ti = handle.get_torrent_info();
-#else
-	libtorrent::torrent_info ti = *handle.torrent_file();
-#endif
+	auto ti = handle.torrent_file();
 
 	if (params.browse_only)
 		handle.pause();
 
-	for (int i = 0; i < ti.num_files(); ++i) {
+	for (int i = 0; i < ti->num_files(); ++i) {
 		// Initially, don't download anything
 		handle.file_priority(i, 0);
 
 		std::string parent("");
 
 #if LIBTORRENT_VERSION_NUM < 10100
-		char *p = strdup(ti.file_at(i).path.c_str());
+		char *p = strdup(ti->file_at(i).path.c_str());
 #else
-		char *p = strdup(ti.files().file_path(i).c_str());
+		char *p = strdup(ti->files().file_path(i).c_str());
 #endif
 
 		for (char *x = strtok(p, "/"); x; x = strtok(NULL, "/")) {
@@ -239,9 +230,9 @@ setup() {
 
 		// Path <-> file index mapping
 #if LIBTORRENT_VERSION_NUM < 10100
-		files["/" + ti.file_at(i).path] = i;
+		files["/" + ti->file_at(i).path] = i;
 #else
-		files["/" + ti.files().file_path(i)] = i;
+		files["/" + ti->files().file_path(i)] = i;
 #endif
 	}
 }
@@ -425,16 +416,12 @@ btfs_getattr(const char *path, struct stat *stbuf) {
 	if (strcmp(path, "/") == 0 || is_dir(path)) {
 		stbuf->st_mode = S_IFDIR | 0755;
 	} else {
-#if LIBTORRENT_VERSION_NUM < 10000
-		libtorrent::torrent_info ti = handle.get_torrent_info();
-#else
-		libtorrent::torrent_info ti = *handle.torrent_file();
-#endif
+		auto ti = handle.torrent_file();
 
 #if LIBTORRENT_VERSION_NUM < 10100
-		int64_t file_size = ti.file_at(files[path]).size;
+		int64_t file_size = ti->file_at(files[path]).size;
 #else
-		int64_t file_size = ti.files().file_size(files[path]);
+		int64_t file_size = ti->files().file_size(files[path]);
 #endif
 
 		stbuf->st_mode = S_IFREG | 0444;
@@ -584,7 +571,7 @@ btfs_init(struct fuse_conn_info *conn) {
 		STRINGIFY(LIBTORRENT_VERSION_MINOR)
 		"00";
 
-#if LIBTORRENT_VERSION_NUM >= 10100
+#if LIBTORRENT_VERSION_NUM >= 10101
 	pack.set_str(pack.dht_bootstrap_nodes,
 		"router.bittorrent.com:6881,"
 		"router.utorrent.com:6881,"
@@ -601,7 +588,7 @@ btfs_init(struct fuse_conn_info *conn) {
 
 	session = new libtorrent::session(pack, flags);
 
-#if LIBTORRENT_VERSION_NUM < 10100
+#if LIBTORRENT_VERSION_NUM < 10101
 	session->add_dht_router(std::make_pair("router.bittorrent.com", 6881));
 	session->add_dht_router(std::make_pair("router.utorrent.com", 6881));
 	session->add_dht_router(std::make_pair("dht.transmissionbt.com", 6881));
@@ -720,10 +707,14 @@ populate_metadata(libtorrent::add_torrent_params& p, const char *arg) {
 #if LIBTORRENT_VERSION_NUM < 10100
 		p.ti = new libtorrent::torrent_info((const char *) output.buf,
 			(int) output.size, ec);
-#else
+#elif LIBTORRENT_VERSION_NUM < 10200
 		p.ti = boost::make_shared<libtorrent::torrent_info>(
 			(const char *) output.buf, (int) output.size,
 			boost::ref(ec));
+#else
+		p.ti = std::make_shared<libtorrent::torrent_info>(
+			(const char *) output.buf, (int) output.size,
+			std::ref(ec));
 #endif
 
 		if (ec)
@@ -750,9 +741,12 @@ populate_metadata(libtorrent::add_torrent_params& p, const char *arg) {
 
 #if LIBTORRENT_VERSION_NUM < 10100
 		p.ti = new libtorrent::torrent_info(r, ec);
-#else
+#elif LIBTORRENT_VERSION_NUM < 10200
 		p.ti = boost::make_shared<libtorrent::torrent_info>(r,
 			boost::ref(ec));
+#else
+		p.ti = std::make_shared<libtorrent::torrent_info>(r,
+			std::ref(ec));
 #endif
 
 		free(r);

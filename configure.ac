@@ -13,7 +13,7 @@ AC_CONFIG_FILES([
 
 # Checks for libraries.
 PKG_CHECK_MODULES(FUSE, fuse >= 2.8.0)
-PKG_CHECK_MODULES(LIBTORRENT, libtorrent-rasterbar >= 0.16.0)
+PKG_CHECK_MODULES(LIBTORRENT, libtorrent-rasterbar >= 1.0.0)
 PKG_CHECK_MODULES(LIBCURL, libcurl >= 7.22.0)
 
 # Checks for typedefs, structures, and compiler characteristics.
