@@ -15,10 +15,8 @@ To unmount and shutdown:
 
     $ fusermount -u mnt
 
-## Installing on a recent Ubuntu (Xenial, Wily, Vivid or Trusty)
+## Installing on Debian/Ubuntu
 
-    $ sudo add-apt-repository ppa:johang/btfs
-    $ sudo apt-get update
     $ sudo apt-get install btfs
 
 ## Installing on Arch Linux
@@ -37,9 +35,9 @@ BTFS has a formula in the [`homebrew/fuse`](https://github.com/Homebrew/homebrew
 
 ## Dependencies (on Linux)
 
-* fuse ("fuse" in Debian/Ubuntu)
-* libtorrent ("libtorrent-rasterbar7" in Debian/Ubuntu)
-* libcurl ("libcurl3" in Debian/Ubuntu)
+* fuse ("fuse" in Ubuntu 16.04)
+* libtorrent ("libtorrent-rasterbar8" in Ubuntu 16.04)
+* libcurl ("libcurl3" in Ubuntu 16.04)
 
 ## Building from git on a recent Debian/Ubuntu
 
