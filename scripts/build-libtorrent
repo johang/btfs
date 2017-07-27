@@ -19,6 +19,6 @@
 git clone -b "${1:-master}" https://github.com/arvidn/libtorrent.git &&
 cd libtorrent &&
 ./autotool.sh &&
-./configure --prefix="${2:-/tmp}" &&
+./configure --prefix="${2:-/tmp}" --disable-encryption &&
 make &&
 make install
