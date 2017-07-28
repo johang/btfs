@@ -277,7 +277,7 @@ handle_torrent_added_alert(libtorrent::torrent_added_alert *a, Log *log) {
 
 	handle = a->handle;
 
-	if (a->handle.status(0).has_metadata)
+	if (a->handle.status().has_metadata)
 		setup();
 
 	pthread_mutex_unlock(&lock);
@@ -516,7 +516,11 @@ btfs_init(struct fuse_conn_info *conn) {
 		libtorrent::session::add_default_plugins |
 		libtorrent::session::start_default_features;
 
+#if LIBTORRENT_VERSION_NUM < 10200
 	int alerts =
+#else
+	libtorrent::alert_category_t alerts =
+#endif
 		libtorrent::alert::tracker_notification |
 		libtorrent::alert::stats_notification |
 		libtorrent::alert::storage_notification |
