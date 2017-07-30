@@ -29,9 +29,9 @@ To unmount and shutdown:
 
 ## Installing on OS X
 
-BTFS has a formula in the [`homebrew/fuse`](https://github.com/Homebrew/homebrew-fuse) repository, ready to go. Just [install `brew`](https://brew.sh) if you hadn't, and then
+BTFS has a formula in the [`homebrew/homebrew-core`](https://github.com/Homebrew/homebrew-core) repository, ready to go. Just [install `brew`](https://brew.sh) if you hadn't, and then
 
-    $ brew install homebrew/fuse/btfs
+    $ brew install btfs
 
 ## Dependencies (on Linux)
 
