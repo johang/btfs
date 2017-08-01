@@ -424,6 +424,17 @@ btfs_getattr(const char *path, struct stat *stbuf) {
 		int64_t file_size = ti->files().file_size(files[path]);
 #endif
 
+#if LIBTORRENT_VERSION_NUM < 10200
+		std::vector<boost::int64_t> progress;
+#else
+		std::vector<std::int64_t> progress;
+#endif
+
+		// Get number of bytes downloaded of each file
+		handle.file_progress(progress,
+			libtorrent::torrent_handle::piece_granularity);
+
+		stbuf->st_blocks = progress[(size_t) files[path]] / 512;
 		stbuf->st_mode = S_IFREG | 0444;
 		stbuf->st_size = file_size;
 	}
