@@ -514,6 +514,26 @@ btfs_read(const char *path, char *buf, size_t size, off_t offset,
 	return s;
 }
 
+static int
+btfs_statfs(const char *path, struct statvfs *stbuf) {
+	libtorrent::torrent_status st = handle.status();
+
+	if (!st.has_metadata)
+		return -ENOENT;
+
+	auto ti = handle.torrent_file();
+
+	stbuf->f_bsize = 4096;
+	stbuf->f_frsize = 512;
+	stbuf->f_blocks = (fsblkcnt_t) (ti->total_size() / 512);
+	stbuf->f_bfree = (fsblkcnt_t) ((ti->total_size() - st.total_done) / 512);
+	stbuf->f_bavail = (fsblkcnt_t) ((ti->total_size() - st.total_done) / 512);
+	stbuf->f_files = (fsfilcnt_t) (files.size() + dirs.size());
+	stbuf->f_ffree = 0;
+
+	return 0;
+}
+
 static void *
 btfs_init(struct fuse_conn_info *conn) {
 	pthread_mutex_lock(&lock);
@@ -839,6 +859,7 @@ main(int argc, char *argv[]) {
 	btfs_ops.readdir = btfs_readdir;
 	btfs_ops.open = btfs_open;
 	btfs_ops.read = btfs_read;
+	btfs_ops.statfs = btfs_statfs;
 	btfs_ops.init = btfs_init;
 	btfs_ops.destroy = btfs_destroy;
 
