@@ -34,6 +34,7 @@ along with BTFS.  If not, see <http://www.gnu.org/licenses/>.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wsign-conversion"
 #pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include <libtorrent/torrent_info.hpp>
 #include <libtorrent/session.hpp>
 #include <libtorrent/alert.hpp>
