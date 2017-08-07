@@ -2,22 +2,22 @@ language: cpp
 matrix:
   include:
     - os: linux
-      env: LIBTORRENT_BRANCH=master BUILDENV="CXX=g++-7 CC=gcc-7 CPP=cpp-7 CXXFLAGS=-fpermissive"
+      env: LIBTORRENT_BRANCH=master TOOLCHAIN="CXX=g++-7 CC=gcc-7 CPP=cpp-7"
     - os: linux
-      env: LIBTORRENT_BRANCH=RC_1_1 BUILDENV="CXX=g++-7 CC=gcc-7 CPP=cpp-7 CXXFLAGS=-fpermissive"
+      env: LIBTORRENT_BRANCH=RC_1_1 TOOLCHAIN="CXX=g++-7 CC=gcc-7 CPP=cpp-7"
     - os: linux
-      env: LIBTORRENT_BRANCH=RC_1_0 BUILDENV="CXX=g++-7 CC=gcc-7 CPP=cpp-7 CXXFLAGS=-fpermissive"
+      env: LIBTORRENT_BRANCH=RC_1_0 TOOLCHAIN="CXX=g++-7 CC=gcc-7 CPP=cpp-7"
     - os: osx
-      env: LIBTORRENT_BRANCH=master BUILDENV="CXXFLAGS=-std=c++11"
+      env: LIBTORRENT_BRANCH=master
     - os: osx
-      env: LIBTORRENT_BRANCH=RC_1_1 BUILDENV="CXXFLAGS=-std=c++11"
+      env: LIBTORRENT_BRANCH=RC_1_1
     - os: osx
-      env: LIBTORRENT_BRANCH=RC_1_0 BUILDENV="CXXFLAGS=-std=c++11"
+      env: LIBTORRENT_BRANCH=RC_1_0
   allow_failures:
     - os: linux
-      env: LIBTORRENT_BRANCH=master BUILDENV="CXX=g++-7 CC=gcc-7 CPP=cpp-7 CXXFLAGS=-fpermissive"
+      env: LIBTORRENT_BRANCH=master TOOLCHAIN="CXX=g++-7 CC=gcc-7 CPP=cpp-7"
     - os: osx
-      env: LIBTORRENT_BRANCH=master BUILDENV="CXXFLAGS=-std=c++11"
+      env: LIBTORRENT_BRANCH=master
 env:
   global:
     - MAKEFLAGS=-j2
@@ -41,8 +41,8 @@ before_install:
       brew install curl;
     fi
 install:
-  - env $BUILDENV ./scripts/build-libtorrent $LIBTORRENT_BRANCH /tmp
+  - env $TOOLCHAIN CXXFLAGS="-fpermissive -w -std=c++11" ./scripts/build-libtorrent $LIBTORRENT_BRANCH /tmp
 before_script:
   - autoreconf -i
 script:
-  - env $BUILDENV ./configure && make && make test
+  - env $TOOLCHAIN ./configure && make && make test
