@@ -392,6 +392,11 @@ alert_queue_loop(void *data) {
 }
 
 static bool
+is_root(const char *path) {
+	return strcmp(path, "/") == 0;
+}
+
+static bool
 is_dir(const char *path) {
 	return dirs.find(path) != dirs.end();
 }
@@ -403,7 +408,7 @@ is_file(const char *path) {
 
 static int
 btfs_getattr(const char *path, struct stat *stbuf) {
-	if (!is_dir(path) && !is_file(path) && strcmp(path, "/") != 0)
+	if (!is_dir(path) && !is_file(path) && !is_root(path))
 		return -ENOENT;
 
 	pthread_mutex_lock(&lock);
@@ -414,7 +419,7 @@ btfs_getattr(const char *path, struct stat *stbuf) {
 	stbuf->st_gid = getgid();
 	stbuf->st_mtime = time_of_mount;
 
-	if (strcmp(path, "/") == 0 || is_dir(path)) {
+	if (is_root(path) || is_dir(path)) {
 		stbuf->st_mode = S_IFDIR | 0755;
 	} else {
 		auto ti = handle.torrent_file();
@@ -448,7 +453,7 @@ btfs_getattr(const char *path, struct stat *stbuf) {
 static int
 btfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		off_t offset, struct fuse_file_info *fi) {
-	if (!is_dir(path) && !is_file(path) && strcmp(path, "/") != 0)
+	if (!is_dir(path) && !is_file(path) && !is_root(path))
 		return -ENOENT;
 
 	if (is_file(path))
@@ -660,6 +665,69 @@ btfs_destroy(void *user_data) {
 	pthread_mutex_unlock(&lock);
 }
 
+#define XATTR_FILE_INDEX "user.btfs.file_index"
+#define XATTR_IS_BTFS_ROOT "user.btfs.is_btfs_root"
+#define XATTR_IS_BTFS "user.btfs.is_btfs"
+
+static int
+btfs_listxattr(const char *path, char *data, size_t len) {
+	const char *xattrs = NULL;
+	int xattrslen = 0;
+
+	if (is_root(path)) {
+		xattrs = XATTR_IS_BTFS "\0" XATTR_IS_BTFS_ROOT;
+		xattrslen = sizeof (XATTR_IS_BTFS "\0" XATTR_IS_BTFS_ROOT);
+	} else if (is_dir(path)) {
+		xattrs = XATTR_IS_BTFS;
+		xattrslen = sizeof (XATTR_IS_BTFS);
+	} else if (is_file(path)) {
+		xattrs = XATTR_FILE_INDEX;
+		xattrslen = sizeof (XATTR_FILE_INDEX);
+	} else {
+		return -ENOENT;
+	}
+
+	// The minimum required length
+	if (len == 0)
+		return xattrslen;
+
+	if (len < (size_t) xattrslen)
+		return -ERANGE;
+
+	memcpy(data, xattrs, (size_t) xattrslen);
+
+	return xattrslen;
+}
+
+static int
+btfs_getxattr(const char *path, const char *key, char *value, size_t len) {
+	char xattr[16];
+	int xattrlen = 0;
+
+	std::string k(key);
+
+	if (is_file(path) && k == XATTR_FILE_INDEX) {
+		xattrlen = snprintf(xattr, sizeof (xattr), "%d", files[path]);
+	} else if (is_root(path) && k == XATTR_IS_BTFS_ROOT) {
+		xattrlen = 0;
+	} else if (is_dir(path) && k == XATTR_IS_BTFS) {
+		xattrlen = 0;
+	} else {
+		return -ENODATA;
+	}
+
+	// The minimum required length
+	if (len == 0)
+		return xattrlen;
+
+	if (len < (size_t) xattrlen)
+		return -ERANGE;
+
+	memcpy(value, xattr, (size_t) xattrlen);
+
+	return xattrlen;
+}
+
 static bool
 populate_target(std::string& target, char *arg) {
 	std::string templ;
@@ -861,6 +929,8 @@ main(int argc, char *argv[]) {
 	btfs_ops.open = btfs_open;
 	btfs_ops.read = btfs_read;
 	btfs_ops.statfs = btfs_statfs;
+	btfs_ops.listxattr = btfs_listxattr;
+	btfs_ops.getxattr = btfs_getxattr;
 	btfs_ops.init = btfs_init;
 	btfs_ops.destroy = btfs_destroy;
 
