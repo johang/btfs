@@ -699,8 +699,15 @@ btfs_listxattr(const char *path, char *data, size_t len) {
 	return xattrslen;
 }
 
+#ifdef __APPLE__
+static int
+btfs_getxattr(const char *path, const char *key, char *value, size_t len,
+		uint32_t position) {
+#else
 static int
 btfs_getxattr(const char *path, const char *key, char *value, size_t len) {
+	uint32_t position = 0;
+#endif
 	char xattr[16];
 	int xattrlen = 0;
 
@@ -720,12 +727,15 @@ btfs_getxattr(const char *path, const char *key, char *value, size_t len) {
 	if (len == 0)
 		return xattrlen;
 
-	if (len < (size_t) xattrlen)
+	if (position >= (uint32_t) xattrlen)
+		return 0;
+
+	if (len < (size_t) xattrlen - position)
 		return -ERANGE;
 
-	memcpy(value, xattr, (size_t) xattrlen);
+	memcpy(value, xattr + position, (size_t) xattrlen - position);
 
-	return xattrlen;
+	return xattrlen - (int) position;
 }
 
 static bool
