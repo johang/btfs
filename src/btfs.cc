@@ -665,10 +665,6 @@ btfs_destroy(void *user_data) {
 	pthread_mutex_unlock(&lock);
 }
 
-#define XATTR_FILE_INDEX "user.btfs.file_index"
-#define XATTR_IS_BTFS_ROOT "user.btfs.is_btfs_root"
-#define XATTR_IS_BTFS "user.btfs.is_btfs"
-
 static int
 btfs_listxattr(const char *path, char *data, size_t len) {
 	const char *xattrs = NULL;

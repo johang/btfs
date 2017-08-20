@@ -20,7 +20,14 @@ along with BTFS.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef BTFS_H
 #define BTFS_H
 
+#include <vector>
+#include <list>
+#include <fstream>
+
+#include "libtorrent/config.hpp"
 #include <libtorrent/peer_request.hpp>
+
+#include "btfsstat.h"
 
 namespace btfs
 {

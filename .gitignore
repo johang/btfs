@@ -1,5 +1,6 @@
 *.o
 btfs
+btfsstat
 
 # generated files
 Makefile
