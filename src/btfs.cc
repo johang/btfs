@@ -681,8 +681,8 @@ btfs_listxattr(const char *path, char *data, size_t len) {
 		xattrs = XATTR_IS_BTFS;
 		xattrslen = sizeof (XATTR_IS_BTFS);
 	} else if (is_file(path)) {
-		xattrs = XATTR_FILE_INDEX;
-		xattrslen = sizeof (XATTR_FILE_INDEX);
+		xattrs = XATTR_IS_BTFS "\0" XATTR_FILE_INDEX;
+		xattrslen = sizeof (XATTR_IS_BTFS "\0" XATTR_FILE_INDEX);
 	} else {
 		return -ENOENT;
 	}
@@ -717,7 +717,7 @@ btfs_getxattr(const char *path, const char *key, char *value, size_t len) {
 		xattrlen = snprintf(xattr, sizeof (xattr), "%d", files[path]);
 	} else if (is_root(path) && k == XATTR_IS_BTFS_ROOT) {
 		xattrlen = 0;
-	} else if (is_dir(path) && k == XATTR_IS_BTFS) {
+	} else if (k == XATTR_IS_BTFS) {
 		xattrlen = 0;
 	} else {
 		return -ENODATA;
