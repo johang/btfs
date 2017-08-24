@@ -549,7 +549,11 @@ btfs_init(struct fuse_conn_info *conn) {
 	libtorrent::add_torrent_params *p = (libtorrent::add_torrent_params *)
 		fuse_get_context()->private_data;
 
+#if LIBTORRENT_VERSION_NUM < 10200
 	int flags =
+#else
+	libtorrent::session_flags_t flags =
+#endif
 		libtorrent::session::add_default_plugins |
 		libtorrent::session::start_default_features;
 
@@ -657,8 +661,16 @@ btfs_destroy(void *user_data) {
 	pthread_cancel(alert_thread);
 	pthread_join(alert_thread, NULL);
 
-	session->remove_torrent(handle,
-		params.keep ? 0 : libtorrent::session::delete_files);
+#if LIBTORRENT_VERSION_NUM < 10200
+	int flags = 0;
+#else
+	libtorrent::remove_flags_t flags = {};
+#endif
+
+	if (params.keep)
+		flags |= libtorrent::session::delete_files;
+
+	session->remove_torrent(handle, flags);
 
 	delete session;
 
