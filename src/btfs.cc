@@ -844,7 +844,11 @@ populate_metadata(libtorrent::add_torrent_params& p, const char *arg) {
 				ec.message().c_str()), false);
 
 		if (params.browse_only)
+#if LIBTORRENT_VERSION_NUM < 10200
 			p.flags |= libtorrent::add_torrent_params::flag_paused;
+#else
+			p.flags |= libtorrent::torrent_flags::paused;
+#endif
 	} else if (uri.find("magnet:") == 0) {
 		libtorrent::error_code ec;
 
@@ -878,7 +882,11 @@ populate_metadata(libtorrent::add_torrent_params& p, const char *arg) {
 				ec.message().c_str()), false);
 
 		if (params.browse_only)
+#if LIBTORRENT_VERSION_NUM < 10200
 			p.flags |= libtorrent::add_torrent_params::flag_paused;
+#else
+			p.flags |= libtorrent::torrent_flags::paused;
+#endif
 	}
 
 	return true;
@@ -1006,8 +1014,13 @@ main(int argc, char *argv[]) {
 
 	libtorrent::add_torrent_params p;
 
+#if LIBTORRENT_VERSION_NUM < 10200
 	p.flags &= ~libtorrent::add_torrent_params::flag_auto_managed;
 	p.flags &= ~libtorrent::add_torrent_params::flag_paused;
+#else
+	p.flags &= ~libtorrent::torrent_flags::auto_managed;
+	p.flags &= ~libtorrent::torrent_flags::paused;
+#endif
 	p.save_path = target + "/files";
 
 	if (mkdir(p.save_path.c_str(), 0777) < 0)
