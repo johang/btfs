@@ -7,10 +7,6 @@ AM_INIT_AUTOMAKE
 # Checks for programs.
 AC_PROG_CXX
 
-AC_CONFIG_FILES([
-	man/Makefile
-])
-
 # Checks for libraries.
 PKG_CHECK_MODULES(FUSE, fuse >= 2.8.0)
 PKG_CHECK_MODULES(LIBTORRENT, libtorrent-rasterbar >= 1.0.0)
@@ -21,9 +17,9 @@ AC_TYPE_OFF_T
 AC_TYPE_SIZE_T
 
 # Checks for library functions.
-AC_CHECK_FUNCS([memset mkdir realpath strdup])
+AC_CHECK_FUNCS([memset memcpy strcmp mkdir strdup realpath getxattr dirname basename])
 
 # Check for unportable pthread_setname_np()
 AC_CHECK_LIB(pthread, pthread_setname_np)
 
-AC_OUTPUT(Makefile src/Makefile scripts/Makefile)
+AC_OUTPUT(Makefile src/Makefile scripts/Makefile man/Makefile)
