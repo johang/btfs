@@ -604,6 +604,7 @@ btfs_init(struct fuse_conn_info *conn) {
 
 	libtorrent::session_settings se = session->settings();
 
+	se.request_timeout = 10;
 	se.strict_end_game_mode = false;
 	se.announce_to_all_trackers = true;
 	se.announce_to_all_tiers = true;
@@ -641,6 +642,7 @@ btfs_init(struct fuse_conn_info *conn) {
 		"dht.transmissionbt.com:6881");
 #endif
 
+	pack.set_int(pack.request_timeout, 10);
 	pack.set_str(pack.listen_interfaces, interfaces.str());
 	pack.set_bool(pack.strict_end_game_mode, false);
 	pack.set_bool(pack.announce_to_all_trackers, true);
