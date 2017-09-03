@@ -140,6 +140,13 @@ Read::Read(char *buf, int index, off_t offset, size_t size) {
 	}
 }
 
+void Read::fail(int piece) {
+	for (parts_iter i = parts.begin(); i != parts.end(); ++i) {
+		if (i->part.piece == piece && !i->filled)
+			failed = true;
+	}
+}
+
 void Read::copy(int piece, char *buffer, int size) {
 	for (parts_iter i = parts.begin(); i != parts.end(); ++i) {
 		if (i->part.piece == piece && !i->filled)
@@ -184,11 +191,14 @@ int Read::read() {
 	// Move sliding window to first piece to serve this request
 	jump(parts.front().part.piece, size());
 
-	while (!finished())
+	while (!finished() && !failed)
 		// Wait for any piece to downloaded
 		pthread_cond_wait(&signal_cond, &lock);
 
-	return size();
+	if (failed)
+		return -EIO;
+	else
+		return size();
 }
 
 static void
@@ -244,8 +254,16 @@ handle_read_piece_alert(libtorrent::read_piece_alert *a, Log *log) {
 
 	pthread_mutex_lock(&lock);
 
-	for (reads_iter i = reads.begin(); i != reads.end(); ++i) {
-		(*i)->copy(a->piece, a->buffer.get(), a->size);
+	if (a->ec) {
+		*log << a->message() << std::endl;
+
+		for (reads_iter i = reads.begin(); i != reads.end(); ++i) {
+			(*i)->fail(a->piece);
+		}
+	} else {
+		for (reads_iter i = reads.begin(); i != reads.end(); ++i) {
+			(*i)->copy(a->piece, a->buffer.get(), a->size);
+		}
 	}
 
 	pthread_mutex_unlock(&lock);

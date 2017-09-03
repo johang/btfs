@@ -60,6 +60,8 @@ class Read
 public:
 	Read(char *buf, int index, off_t offset, size_t size);
 
+	void fail(int piece);
+
 	void copy(int piece, char *buffer, int size);
 
 	void trigger();
@@ -71,6 +73,8 @@ public:
 	int read();
 
 private:
+	bool failed = false;
+
 	std::vector<Part> parts;
 };
 
