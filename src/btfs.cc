@@ -250,7 +250,8 @@ setup() {
 
 static void
 handle_read_piece_alert(libtorrent::read_piece_alert *a, Log *log) {
-	printf("%s: piece %d size %d\n", __func__, a->piece, a->size);
+	printf("%s: piece %d size %d\n", __func__, static_cast<int>(a->piece),
+		a->size);
 
 	pthread_mutex_lock(&lock);
 
@@ -274,7 +275,7 @@ handle_read_piece_alert(libtorrent::read_piece_alert *a, Log *log) {
 
 static void
 handle_piece_finished_alert(libtorrent::piece_finished_alert *a, Log *log) {
-	printf("%s: %d\n", __func__, a->piece_index);
+	printf("%s: %d\n", __func__, static_cast<int>(a->piece_index));
 
 	pthread_mutex_lock(&lock);
 
