@@ -788,21 +788,22 @@ populate_target(std::string& target, char *arg) {
 	templ += "/btfs-XXXXXX";
 
 	char *s = strdup(templ.c_str());
+	if (s != NULL) {
+		if (mkdtemp(s) != NULL) {
+			char *x = realpath(s, NULL);
 
-	if (mkdtemp(s) != NULL) {
-		char *x = realpath(s, NULL);
+			if (x)
+				target = x;
+			else
+				perror("Failed to expand target");
 
-		if (x)
-			target = x;
-		else
-			perror("Failed to expand target");
+			free(x);		
+		} else {
+			perror("Failed to generate target");
+		}
 
-		free(x);		
-	} else {
-		perror("Failed to generate target");
+		free(s);
 	}
-
-	free(s);
 
 	return target.length() > 0;
 }
