@@ -222,6 +222,9 @@ setup() {
 		char *p = strdup(ti->files().file_path(i).c_str());
 #endif
 
+		if (!p)
+			continue;
+
 		for (char *x = strtok(p, "/"); x; x = strtok(NULL, "/")) {
 			if (strlen(x) <= 0)
 				continue;
@@ -789,7 +792,7 @@ populate_target(std::string& target, char *arg) {
 
 	char *s = strdup(templ.c_str());
 
-	if (mkdtemp(s) != NULL) {
+	if (s != NULL && mkdtemp(s) != NULL) {
 		char *x = realpath(s, NULL);
 
 		if (x)
