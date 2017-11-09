@@ -294,8 +294,6 @@ handle_piece_finished_alert(libtorrent::piece_finished_alert *a, Log *log) {
 
 static void
 handle_torrent_added_alert(libtorrent::torrent_added_alert *a, Log *log) {
-	//printf("%s()\n", __func__);
-
 	pthread_mutex_lock(&lock);
 
 	handle = a->handle;
@@ -309,8 +307,6 @@ handle_torrent_added_alert(libtorrent::torrent_added_alert *a, Log *log) {
 static void
 handle_metadata_received_alert(libtorrent::metadata_received_alert *a,
 		Log *log) {
-	//printf("%s\n", __func__);
-
 	pthread_mutex_lock(&lock);
 
 	handle = a->handle;
@@ -513,8 +509,6 @@ btfs_open(const char *path, struct fuse_file_info *fi) {
 static int
 btfs_read(const char *path, char *buf, size_t size, off_t offset,
 		struct fuse_file_info *fi) {
-	//printf("%s: %s %lu %ld\n", __func__, path, size, offset);
-
 	if (!is_dir(path) && !is_file(path))
 		return -ENOENT;
 
