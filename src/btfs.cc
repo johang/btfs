@@ -685,7 +685,7 @@ btfs_destroy(void *user_data) {
 	libtorrent::remove_flags_t flags = {};
 #endif
 
-	if (params.keep)
+	if (!params.keep)
 		flags |= libtorrent::session::delete_files;
 
 	session->remove_torrent(handle, flags);
