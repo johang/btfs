@@ -99,14 +99,8 @@ jump(int piece, int size) {
 
 	cursor = tail;
 
-	int pl = ti->piece_length();
-
-	for (int b = 0; b < 16 * pl; b += pl) {
+	for (int i = 0; i < 16; i++) {
 		handle.piece_priority(tail++, 7);
-	}
-
-	for (int o = (tail - piece) * pl; o < size + pl - 1; o += pl) {
-		handle.piece_priority(tail++, 1);
 	}
 }
 
@@ -211,9 +205,6 @@ setup() {
 		handle.pause();
 
 	for (int i = 0; i < ti->num_files(); ++i) {
-		// Initially, don't download anything
-		handle.file_priority(i, 0);
-
 		std::string parent("");
 
 #if LIBTORRENT_VERSION_NUM < 10100
