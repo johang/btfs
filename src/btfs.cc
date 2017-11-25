@@ -329,14 +329,18 @@ handle_alert(libtorrent::alert *a, Log *log) {
 		handle_torrent_added_alert(
 			(libtorrent::torrent_added_alert *) a, log);
 		break;
+	case libtorrent::dht_bootstrap_alert::alert_type:
+		*log << a->message() << std::endl;
+		// Force DHT announce because libtorrent won't by itself
+		handle.force_dht_announce();
+		break;
+	case libtorrent::dht_announce_alert::alert_type:
+	case libtorrent::dht_reply_alert::alert_type:
 	case libtorrent::metadata_failed_alert::alert_type:
 	case libtorrent::tracker_announce_alert::alert_type:
 	case libtorrent::tracker_reply_alert::alert_type:
 	case libtorrent::tracker_warning_alert::alert_type:
 	case libtorrent::tracker_error_alert::alert_type:
-	case libtorrent::dht_bootstrap_alert::alert_type:
-	case libtorrent::dht_announce_alert::alert_type:
-	case libtorrent::dht_reply_alert::alert_type:
 	case libtorrent::lsd_peer_alert::alert_type:
 		*log << a->message() << std::endl;
 		break;
