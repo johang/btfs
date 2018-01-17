@@ -17,19 +17,19 @@ To unmount and shutdown:
 
 ## Installing on Debian/Ubuntu
 
-    $ sudo apt-get install btfs
+    # apt-get install btfs
 
 ## Installing on Arch Linux
 
-    $ sudo pacman -S btfs
+    # pacman -S btfs
 
 ## Installing on Gentoo
 
     # emerge -av btfs
 
-## Installing on OS X
+## Installing on macOS
 
-BTFS has a formula in the [`homebrew/homebrew-core`](https://github.com/Homebrew/homebrew-core) repository, ready to go. Just [install `brew`](https://brew.sh) if you hadn't, and then
+Use [`brew`](https://brew.sh) to install on macOS.
 
     $ brew install btfs
 
@@ -50,11 +50,11 @@ BTFS has a formula in the [`homebrew/homebrew-core`](https://github.com/Homebrew
 
 And optionally, if you want to install it:
 
-    $ sudo make install
+    $ make install
 
-## Building on OS X
+## Building on macOS
 
-Use `brew` to get the dependencies and clone the project.
+Use [`brew`](https://brew.sh) to get the dependencies.
 
     $ brew install Caskroom/cask/osxfuse libtorrent-rasterbar autoconf automake pkg-config
     $ git clone https://github.com/johang/btfs.git btfs
@@ -65,4 +65,4 @@ Use `brew` to get the dependencies and clone the project.
 
 And optionally, if you want to install it:
 
-    # make install
+    $ make install
