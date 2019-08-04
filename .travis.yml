@@ -2,22 +2,13 @@ language: cpp
 matrix:
   include:
     - os: linux
-      env: LIBTORRENT_BRANCH=master TOOLCHAIN="CXX=g++-8 CC=gcc-8 CPP=cpp-8"
+      env: LIBTORRENT_BRANCH=RC_1_2 TOOLCHAIN="CXX=g++-8 CC=gcc-8 CPP=cpp-8"
     - os: linux
       env: LIBTORRENT_BRANCH=RC_1_1 TOOLCHAIN="CXX=g++-8 CC=gcc-8 CPP=cpp-8"
-    - os: linux
-      env: LIBTORRENT_BRANCH=RC_1_0 TOOLCHAIN="CXX=g++-8 CC=gcc-8 CPP=cpp-8"
     - os: osx
-      env: LIBTORRENT_BRANCH=master
+      env: LIBTORRENT_BRANCH=RC_1_2
     - os: osx
       env: LIBTORRENT_BRANCH=RC_1_1
-    - os: osx
-      env: LIBTORRENT_BRANCH=RC_1_0
-  allow_failures:
-    - os: linux
-      env: LIBTORRENT_BRANCH=master TOOLCHAIN="CXX=g++-8 CC=gcc-8 CPP=cpp-8"
-    - os: osx
-      env: LIBTORRENT_BRANCH=master
 env:
   global:
     - MAKEFLAGS=-j2
