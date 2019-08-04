@@ -17,11 +17,9 @@ env:
 addons:
   apt:
     sources:
-      - boost-latest
       - ubuntu-toolchain-r-test
     packages:
-      - libboost1.55-all-dev
-      - libboost1.55-tools-dev
+      - libboost-all-dev
       - libfuse-dev
       - libcurl4-openssl-dev
       - g++-8
