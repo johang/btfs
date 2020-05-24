@@ -22,4 +22,7 @@ AC_CHECK_FUNCS([memset memcpy strcmp mkdir strdup realpath getxattr dirname base
 # Check for unportable pthread_setname_np()
 AC_CHECK_LIB(pthread, pthread_setname_np)
 
+# Check if -latomic is needed.
+AC_SEARCH_LIBS(__atomic_load, atomic)
+
 AC_OUTPUT(Makefile src/Makefile scripts/Makefile man/Makefile)
