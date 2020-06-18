@@ -2,9 +2,11 @@ language: cpp
 matrix:
   include:
     - os: linux
-      env: LIBTORRENT_BRANCH=RC_1_2 TOOLCHAIN="CXX=g++-8 CC=gcc-8 CPP=cpp-8"
+      dist: bionic
+      env: LIBTORRENT_BRANCH=RC_1_2 TOOLCHAIN="CXX=g++-10 CC=gcc-10 CPP=cpp-10"
     - os: linux
-      env: LIBTORRENT_BRANCH=RC_1_1 TOOLCHAIN="CXX=g++-8 CC=gcc-8 CPP=cpp-8"
+      dist: bionic
+      env: LIBTORRENT_BRANCH=RC_1_1 TOOLCHAIN="CXX=g++-10 CC=gcc-10 CPP=cpp-10"
     - os: osx
       env: LIBTORRENT_BRANCH=RC_1_2
     - os: osx
@@ -22,7 +24,7 @@ addons:
       - libboost-all-dev
       - libfuse-dev
       - libcurl4-openssl-dev
-      - g++-8
+      - g++-10
 before_install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       brew update;
