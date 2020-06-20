@@ -71,8 +71,13 @@ scan(std::string indent, std::string d, std::string f) {
 		}
 	} else if (S_ISREG(s.st_mode)) {
 		// Download progress for this file (in percent)
-		long progress = lround((100.0 * 512.0 * (double) s.st_blocks) /
-			(double) s.st_size);
+		long progress;
+
+		if (s.st_size > 0)
+			progress = lround((100.0 * 512.0 * (double) s.st_blocks) /
+				(double) s.st_size);
+		else
+			progress = 100;
 
 		printf("%s%s (%3ld%%)\n", indent.c_str(), f.c_str(), progress);
 	}
