@@ -16,9 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with BTFS.  If not, see <http://www.gnu.org/licenses/>.
 
-git clone -b "${1:-master}" https://github.com/arvidn/libtorrent.git &&
+git clone --recurse-submodules -b "${1:-master}" https://github.com/arvidn/libtorrent.git &&
 cd libtorrent &&
-./autotool.sh &&
-./configure --prefix="${2:-/tmp}" --disable-encryption &&
+mkdir build &&
+cd build &&
+cmake -DCMAKE_INSTALL_PREFIX="${2:-/tmp}" -G "Unix Makefiles" .. &&
 make &&
 make install

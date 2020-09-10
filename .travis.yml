@@ -2,14 +2,13 @@ language: cpp
 matrix:
   include:
     - os: linux
-      dist: bionic
-      env: LIBTORRENT_BRANCH=RC_1_2 TOOLCHAIN="CXX=g++-10 CC=gcc-10 CPP=cpp-10"
+      dist: focal
+      env: LIBTORRENT_BRANCH=RC_2_0
     - os: linux
-      dist: bionic
-      env: LIBTORRENT_BRANCH=RC_1_1 TOOLCHAIN="CXX=g++-10 CC=gcc-10 CPP=cpp-10"
-    - os: osx
+      dist: focal
       env: LIBTORRENT_BRANCH=RC_1_2
-    - os: osx
+    - os: linux
+      dist: focal
       env: LIBTORRENT_BRANCH=RC_1_1
 env:
   global:
@@ -18,22 +17,11 @@ env:
     - LD_LIBRARY_PATH=/tmp/lib
 addons:
   apt:
-    sources:
-      - ubuntu-toolchain-r-test
     packages:
       - libboost-all-dev
       - libfuse-dev
       - libcurl4-openssl-dev
-      - g++-10
-before_install:
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      brew update;
-      brew install Caskroom/cask/osxfuse;
-      brew install curl;
-    fi
 install:
-  - env $TOOLCHAIN CXXFLAGS="-fpermissive -w -std=c++11" ./scripts/build-libtorrent $LIBTORRENT_BRANCH /tmp
-before_script:
-  - autoreconf -i
+  - env CXXFLAGS="-fpermissive -w" ./scripts/build-libtorrent $LIBTORRENT_BRANCH /tmp
 script:
-  - env $TOOLCHAIN ./configure && make && make test
+  - autoreconf -i && ./configure && make && make test
