@@ -123,6 +123,7 @@ struct btfs_params {
 	int help_fuse;
 	int browse_only;
 	int keep;
+	int utp_only;
 	char *data_directory;
 	int min_port;
 	int max_port;

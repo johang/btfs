@@ -604,6 +604,8 @@ btfs_init(struct fuse_conn_info *conn) {
 	se.strict_end_game_mode = false;
 	se.announce_to_all_trackers = true;
 	se.announce_to_all_tiers = true;
+	se.enable_incoming_tcp = !params.utp_only;
+	se.enable_outgoing_tcp = !params.utp_only;
 	se.download_rate_limit = params.max_download_rate * 1024;
 	se.upload_rate_limit = params.max_upload_rate * 1024;
 
@@ -643,6 +645,8 @@ btfs_init(struct fuse_conn_info *conn) {
 	pack.set_bool(pack.strict_end_game_mode, false);
 	pack.set_bool(pack.announce_to_all_trackers, true);
 	pack.set_bool(pack.announce_to_all_tiers, true);
+	pack.set_bool(pack.enable_incoming_tcp, !params.utp_only);
+	pack.set_bool(pack.enable_outgoing_tcp, !params.utp_only);
 	pack.set_int(pack.download_rate_limit, params.max_download_rate * 1024);
 	pack.set_int(pack.upload_rate_limit, params.max_upload_rate * 1024);
 	pack.set_int(pack.alert_mask, alerts);
@@ -920,6 +924,7 @@ static const struct fuse_opt btfs_opts[] = {
 	BTFS_OPT("--browse-only",                browse_only,          1),
 	BTFS_OPT("-k",                           keep,                 1),
 	BTFS_OPT("--keep",                       keep,                 1),
+	BTFS_OPT("--utp-only",                   utp_only,             1),
 	BTFS_OPT("--data-directory=%s",          data_directory,       4),
 	BTFS_OPT("--min-port=%lu",               min_port,             4),
 	BTFS_OPT("--max-port=%lu",               max_port,             4),
@@ -956,6 +961,7 @@ print_help() {
 	printf("    --help-fuse            print all fuse options\n");
 	printf("    --browse-only -b       download metadata only\n");
 	printf("    --keep -k              keep files after unmount\n");
+	printf("    --utp-only             do not use TCP\n");
 	printf("    --data-directory=dir   directory in which to put btfs data\n");
 	printf("    --min-port=N           start of listen port range\n");
 	printf("    --max-port=N           end of listen port range\n");
