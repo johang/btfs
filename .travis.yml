@@ -1,20 +1,18 @@
 language: cpp
-matrix:
-  include:
-    - os: linux
-      dist: focal
-      env: LIBTORRENT_BRANCH=RC_2_0
-    - os: linux
-      dist: focal
-      env: LIBTORRENT_BRANCH=RC_1_2
-    - os: linux
-      dist: focal
-      env: LIBTORRENT_BRANCH=RC_1_1
+os: linux
+dist: focal
+arch:
+    - AMD64
+    - ppc64le
 env:
   global:
     - MAKEFLAGS=-j2
     - PKG_CONFIG_PATH=/tmp/lib/pkgconfig
     - LD_LIBRARY_PATH=/tmp/lib
+  jobs:
+    - LIBTORRENT_BRANCH=RC_1_1
+    - LIBTORRENT_BRANCH=RC_1_2
+    - LIBTORRENT_BRANCH=RC_2_0
 addons:
   apt:
     packages:
