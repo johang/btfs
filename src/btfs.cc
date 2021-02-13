@@ -772,6 +772,9 @@ populate_target(std::string& target, char *arg) {
 
 	if (arg) {
 		templ += arg;
+	} else if (getenv("XDG_DATA_HOME")) {
+		templ += getenv("XDG_DATA_HOME");
+		templ += "/btfs";
 	} else if (getenv("HOME")) {
 		templ += getenv("HOME");
 		templ += "/btfs";
