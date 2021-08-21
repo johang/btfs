@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/bin/sh
 # Copyright 2017 Johan Gunnarsson <johan.gunnarsson@gmail.com>
 #
 # This file is part of BTFS.
