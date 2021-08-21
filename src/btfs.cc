@@ -225,7 +225,7 @@ setup() {
 				dirs["/"].insert(x);
 			else
 				// Non-root dir <-> children mapping
-		 		dirs[parent].insert(x);
+				dirs[parent].insert(x);
 
 			parent += "/";
 			parent += x;
@@ -834,8 +834,8 @@ populate_metadata(libtorrent::add_torrent_params& p, const char *arg) {
 		CURL *ch = curl_easy_init();
 
 		curl_easy_setopt(ch, CURLOPT_URL, uri.c_str());
-		curl_easy_setopt(ch, CURLOPT_WRITEFUNCTION, handle_http); 
-		curl_easy_setopt(ch, CURLOPT_WRITEDATA, (void *) &output); 
+		curl_easy_setopt(ch, CURLOPT_WRITEFUNCTION, handle_http);
+		curl_easy_setopt(ch, CURLOPT_WRITEDATA, (void *) &output);
 		curl_easy_setopt(ch, CURLOPT_USERAGENT, "btfs/" VERSION);
 		curl_easy_setopt(ch, CURLOPT_FOLLOWLOCATION, 1);
 
