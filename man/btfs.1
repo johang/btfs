@@ -29,7 +29,7 @@ keep files after unmount
 do not use TCP
 .TP
 \fB\-\-data-directory=\fIDIRECTORY\fR
-directory in which to put btfs download data. default is $HOME/btfs, or /tmp/btfs if unavailable
+directory in which to put btfs download data. will by default use $XDG_DATA_HOME if defined else use $HOME/btfs, or /tmp/btfs if the latter is unavailable
 .TP
 \fB\-\-min-port=\fIPORT\fR
 start of listen port range
