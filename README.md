@@ -26,7 +26,21 @@ To unmount and shutdown:
 ## Installing on Gentoo
 
     # emerge -av btfs
+    
+## Installing on Fedora
 
+    # copr enable elxreno/btfs && dnf install btfs
+    
+## Installing on Fedora OSTree
+
+    # wget https://raw.githubusercontent.com/trytomakeyouprivate/COPR-OSTree/main/copr -P ~/.local/bin/
+    # sudo copr enable elxreno/btfs
+    $ rpm-ostree install btfs
+    
+## OpenSUSE
+
+    # zypper install btfs
+    
 ## Installing on macOS
 
 Use [`brew`](https://brew.sh) to install on macOS.
