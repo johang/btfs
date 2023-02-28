@@ -26,7 +26,19 @@ To unmount and shutdown:
 ## Installing on Gentoo
 
     # emerge -av btfs
+    
+## Installing on Fedora
 
+    # dnf install fuse-btfs
+    
+## Installing on Fedora OSTree
+
+    $ rpm-ostree install fuse-btfs
+    
+## OpenSUSE
+
+    # zypper install btfs
+    
 ## Installing on macOS
 
 Use [`brew`](https://brew.sh) to install on macOS.
