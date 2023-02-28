@@ -29,13 +29,11 @@ To unmount and shutdown:
     
 ## Installing on Fedora
 
-    # copr enable elxreno/btfs && dnf install btfs
+    # dnf install fuse-btfs
     
 ## Installing on Fedora OSTree
 
-    # wget https://raw.githubusercontent.com/trytomakeyouprivate/COPR-OSTree/main/copr -P ~/.local/bin/
-    # sudo copr enable elxreno/btfs
-    $ rpm-ostree install btfs
+    $ rpm-ostree install fuse-btfs
     
 ## OpenSUSE
 
