@@ -663,7 +663,7 @@ btfs_init(struct fuse_conn_info *conn) {
 #endif
 
 	pthread_create(&alert_thread, NULL, alert_queue_loop,
-		new Log(p->save_path + "/../log.txt"));
+               new Log(params.silent ? std::string() : (p->save_path + "/../log.txt")));
 
 #ifdef HAVE_PTHREAD_SETNAME_NP
 	pthread_setname_np(alert_thread, "alert");
@@ -927,6 +927,8 @@ static const struct fuse_opt btfs_opts[] = {
 	BTFS_OPT("--browse-only",                browse_only,          1),
 	BTFS_OPT("-k",                           keep,                 1),
 	BTFS_OPT("--keep",                       keep,                 1),
+	BTFS_OPT("-s",                           silent,               1),
+	BTFS_OPT("--silent",                     silent,               1),
 	BTFS_OPT("--utp-only",                   utp_only,             1),
 	BTFS_OPT("--data-directory=%s",          data_directory,       4),
 	BTFS_OPT("--min-port=%lu",               min_port,             4),
@@ -964,6 +966,7 @@ print_help() {
 	printf("    --help-fuse            print all fuse options\n");
 	printf("    --browse-only -b       download metadata only\n");
 	printf("    --keep -k              keep files after unmount\n");
+	printf("    --silent -s            do not create logs\n");
 	printf("    --utp-only             do not use TCP\n");
 	printf("    --data-directory=dir   directory in which to put btfs data\n");
 	printf("    --min-port=N           start of listen port range\n");
@@ -991,6 +994,9 @@ main(int argc, char *argv[]) {
 
 	if (fuse_opt_parse(&args, &params, btfs_opts, btfs_process_arg))
 		RETV(fprintf(stderr, "Failed to parse options\n"), -1);
+
+        if (params.silent)
+                printf("No logs.\n");
 
 	if (!params.metadata)
 		params.help = 1;
