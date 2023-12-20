@@ -663,7 +663,7 @@ btfs_init(struct fuse_conn_info *conn) {
 #endif
 
 	pthread_create(&alert_thread, NULL, alert_queue_loop,
-               new Log(params.silent ? std::string() : (p->save_path + "/../log.txt")));
+		new Log(params.silent ? std::string() : (p->save_path + "/../log.txt")));
 
 #ifdef HAVE_PTHREAD_SETNAME_NP
 	pthread_setname_np(alert_thread, "alert");
@@ -994,9 +994,6 @@ main(int argc, char *argv[]) {
 
 	if (fuse_opt_parse(&args, &params, btfs_opts, btfs_process_arg))
 		RETV(fprintf(stderr, "Failed to parse options\n"), -1);
-
-        if (params.silent)
-                printf("No logs.\n");
 
 	if (!params.metadata)
 		params.help = 1;

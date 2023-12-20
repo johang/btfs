@@ -100,7 +100,7 @@ public:
 class Log : public std::ofstream
 {
 public:
-       Log(std::string p) : std::ofstream(p.empty() ? "/dev/null" : p.c_str()), path(p) {
+	Log(std::string p) : std::ofstream(p.empty() ? "/dev/null" : p.c_str()), path(p) {
 		if (!is_open())
 			// If open log file fails, write to a dummy file
 			open("/dev/null");
