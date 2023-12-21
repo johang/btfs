@@ -1,0 +1,41 @@
+name: btfs CI
+
+on:
+  push:
+    branches: [ 'master' ]
+  pull_request:
+    branches: [ 'master' ]
+  schedule:
+    - cron: '0 12 1 * *'
+
+jobs:
+  ubuntu:
+    runs-on: ubuntu-latest
+    name: 'Ubuntu (${{ matrix.image }})'
+    timeout-minutes: 10
+
+    strategy:
+      matrix:
+        image:
+          - 'ubuntu:latest'
+          - 'ubuntu:rolling'
+          - 'ubuntu:devel'
+      fail-fast: false
+
+    container:
+      image: ${{ matrix.image }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Install dependencies
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        apt-get update
+        apt-get -y install build-essential g++ autoconf autoconf-archive automake libtool libtorrent-rasterbar-dev libfuse-dev libcurl4-openssl-dev
+    - name: Build
+      run: |
+        autoreconf -i
+        ./configure
+        make
