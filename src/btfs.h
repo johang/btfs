@@ -100,7 +100,7 @@ public:
 class Log : public std::ofstream
 {
 public:
-	Log(std::string p) : std::ofstream(p.c_str()), path(p) {
+	Log(std::string p) : std::ofstream(p.empty() ? "/dev/null" : p.c_str()), path(p) {
 		if (!is_open())
 			// If open log file fails, write to a dummy file
 			open("/dev/null");
@@ -109,7 +109,7 @@ public:
 	~Log() {
 		close();
 
-		if (remove(path.c_str()))
+		if (!path.empty() && remove(path.c_str()))
 			perror("Failed to remove log");
 	}
 
@@ -123,6 +123,7 @@ struct btfs_params {
 	int help_fuse;
 	int browse_only;
 	int keep;
+	int silent;
 	int utp_only;
 	char *data_directory;
 	int min_port;
