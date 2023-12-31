@@ -78,3 +78,13 @@ Use [`brew`](https://brew.sh) to get the dependencies.
 And optionally, if you want to install it:
 
     $ make install
+
+## Building and running with Docker
+Both `Dockerfile` and Docker Compose [manifest](./docker-compose.yml) are provided. They can be used both for deploying and for development (no need to install development toolchain in your machine, just Docker and Docker Compose).
+You can use them to build and run from source a container which will mount [Sintel](https://cloud.blender.org/films/sintel) movie torrent in your `/tmp/btfs-docker/` dir by doing:
+```
+$ docker-compose up --build --force-recreate
+```
+Stop it by `CTRL+C`'ing or by executing `docker stop btfs` from another shell.
+
+See the `docker-compose.yml` manifest file for more info and customizations.
