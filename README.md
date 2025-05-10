@@ -47,13 +47,13 @@ Use [`brew`](https://brew.sh) to install on macOS.
 
 ## Dependencies (on Linux)
 
-* fuse ("fuse" in Ubuntu 16.04)
-* libtorrent ("libtorrent-rasterbar8" in Ubuntu 16.04)
-* libcurl ("libcurl3" in Ubuntu 16.04)
+* fuse3 ("fuse3" in Ubuntu 22.04)
+* libtorrent ("libtorrent-rasterbar8" in Ubuntu 22.04)
+* libcurl ("libcurl4" in Ubuntu 22.04)
 
 ## Building from git on a recent Debian/Ubuntu
 
-    $ sudo apt-get install autoconf automake libfuse-dev libtorrent-rasterbar-dev libcurl4-openssl-dev g++
+    $ sudo apt-get install autoconf automake libfuse3-dev libtorrent-rasterbar-dev libcurl4-openssl-dev g++
     $ git clone https://github.com/johang/btfs.git btfs
     $ cd btfs
     $ autoreconf -i
@@ -68,7 +68,7 @@ And optionally, if you want to install it:
 
 Use [`brew`](https://brew.sh) to get the dependencies.
 
-    $ brew install Caskroom/cask/osxfuse libtorrent-rasterbar autoconf automake pkg-config
+    $ brew install --cask macfuse libtorrent-rasterbar autoconf automake pkg-config
     $ git clone https://github.com/johang/btfs.git btfs
     $ cd btfs
     $ autoreconf -i
