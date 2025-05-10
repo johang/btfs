@@ -33,7 +33,7 @@ jobs:
         DEBIAN_FRONTEND: noninteractive
       run: |
         apt-get update
-        apt-get -y install build-essential g++ autoconf autoconf-archive automake libtool libtorrent-rasterbar-dev libfuse-dev libcurl4-openssl-dev
+        apt-get -y install build-essential g++ autoconf autoconf-archive automake libtool libtorrent-rasterbar-dev libfuse3-dev libcurl4-openssl-dev
     - name: Build
       run: |
         autoreconf -i

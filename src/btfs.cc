@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with BTFS.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define FUSE_USE_VERSION 26
+#define FUSE_USE_VERSION 31
 
 #include <cstdlib>
 #include <iostream>
@@ -27,7 +27,8 @@ along with BTFS.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include <fuse.h>
+#include <fuse3/fuse.h>
+#include <fuse3/fuse_opt.h>
 
 // The below pragma lines will silence lots of compiler warnings in the
 // libtorrent headers file. Not btfs' fault.
@@ -420,7 +421,9 @@ is_file(const char *path) {
 }
 
 static int
-btfs_getattr(const char *path, struct stat *stbuf) {
+btfs_getattr(const char *path, struct stat *stbuf,
+		struct fuse_file_info *fi) {
+	(void) fi;
 	if (!is_dir(path) && !is_file(path) && !is_root(path))
 		return -ENOENT;
 
@@ -465,7 +468,9 @@ btfs_getattr(const char *path, struct stat *stbuf) {
 
 static int
 btfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
-		off_t offset, struct fuse_file_info *fi) {
+		off_t offset, struct fuse_file_info *fi,
+		enum fuse_readdir_flags flags) {
+	(void)flags;
 	if (!is_dir(path) && !is_file(path) && !is_root(path))
 		return -ENOENT;
 
@@ -474,12 +479,12 @@ btfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
 	pthread_mutex_lock(&lock);
 
-	filler(buf, ".", NULL, 0);
-	filler(buf, "..", NULL, 0);
+	filler(buf, ".", NULL, 0, (enum fuse_fill_dir_flags)0);
+	filler(buf, "..", NULL, 0, (enum fuse_fill_dir_flags)0);
 
 	for (std::set<std::string>::iterator i = dirs[path].begin();
 			i != dirs[path].end(); ++i) {
-		filler(buf, i->c_str(), NULL, 0);
+		filler(buf, i->c_str(), NULL, 0, (enum fuse_fill_dir_flags)0);
 	}
 
 	pthread_mutex_unlock(&lock);
@@ -555,7 +560,8 @@ btfs_statfs(const char *path, struct statvfs *stbuf) {
 }
 
 static void *
-btfs_init(struct fuse_conn_info *conn) {
+btfs_init(struct fuse_conn_info *conn,
+		struct fuse_config *cfg) {
 	pthread_mutex_lock(&lock);
 
 	time_of_mount = time(NULL);

@@ -1,5 +1,5 @@
 AC_PREREQ([2.69])
-AC_INIT(btfs, 2.24, johan.gunnarsson@gmail.com, btfs, https://github.com/johang/btfs)
+AC_INIT([btfs],[2.24],[johan.gunnarsson@gmail.com],[btfs],[https://github.com/johang/btfs])
 AC_CONFIG_SRCDIR([src/btfs.cc])
 
 AM_INIT_AUTOMAKE
@@ -8,7 +8,7 @@ AM_INIT_AUTOMAKE
 AC_PROG_CXX
 
 # Checks for libraries.
-PKG_CHECK_MODULES(FUSE, fuse >= 2.8.0)
+PKG_CHECK_MODULES(FUSE, fuse3 >= 3.0)
 PKG_CHECK_MODULES(LIBTORRENT, libtorrent-rasterbar >= 1.0.0)
 PKG_CHECK_MODULES(LIBCURL, libcurl >= 7.22.0)
 
@@ -25,4 +25,5 @@ AC_CHECK_LIB(pthread, pthread_setname_np)
 # Check if -latomic is needed.
 AC_SEARCH_LIBS(__atomic_load, atomic)
 
-AC_OUTPUT(Makefile src/Makefile scripts/Makefile man/Makefile)
+AC_CONFIG_FILES([Makefile src/Makefile scripts/Makefile man/Makefile])
+AC_OUTPUT
