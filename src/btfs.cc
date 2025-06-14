@@ -773,7 +773,7 @@ btfs_getxattr(const char *path, const char *key, char *value, size_t len) {
 }
 
 static bool
-populate_target(std::string& target, char *arg) {
+populate_target(std::string& target, char *arg, const std::string& name) {
 	std::string templ;
 
 	if (arg) {
@@ -793,11 +793,17 @@ populate_target(std::string& target, char *arg) {
 			RETV(perror("Failed to create target"), false);
 	}
 
-	templ += "/btfs-XXXXXX";
+	templ += "/";
+	templ += name;
+
+	if (mkdir(templ.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) < 0) {
+		if (errno != EEXIST)
+			RETV(perror("Failed to create target"), false);
+	}
 
 	char *s = strdup(templ.c_str());
 
-	if (s != NULL && mkdtemp(s) != NULL) {
+	if (s != NULL) {
 		char *x = realpath(s, NULL);
 
 		if (x)
@@ -1043,11 +1049,6 @@ main(int argc, char *argv[]) {
 	if (params.min_port > params.max_port)
 		RETV(fprintf(stderr, "Invalid port range\n"), -1);
 
-	std::string target;
-
-	if (!populate_target(target, params.data_directory))
-		return -1;
-
 	libtorrent::add_torrent_params p;
 
 #if LIBTORRENT_VERSION_NUM < 10200
@@ -1057,15 +1058,27 @@ main(int argc, char *argv[]) {
 	p.flags &= ~libtorrent::torrent_flags::auto_managed;
 	p.flags &= ~libtorrent::torrent_flags::paused;
 #endif
-	p.save_path = target + "/files";
-
-	if (mkdir(p.save_path.c_str(), 0777) < 0)
-		RETV(perror("Failed to create files directory"), -1);
 
 	curl_global_init(CURL_GLOBAL_ALL);
 
 	if (!populate_metadata(p, params.metadata))
 		return -1;
+
+	std::ostringstream hash_stream;
+	auto info_hashes = p.ti ? p.ti->info_hashes() : p.info_hashes;
+	hash_stream << info_hashes.get_best();
+
+	std::string target;
+
+	if (!populate_target(target, params.data_directory, hash_stream.str()))
+		return -1;
+
+	p.save_path = target + "/files";
+
+	if (mkdir(p.save_path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) < 0) {
+		if (errno != EEXIST)
+			RETV(perror("Failed to create files directory"), -1);
+	}
 
 	fuse_main(args.argc, args.argv, &btfs_ops, (void *) &p);
 
