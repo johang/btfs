@@ -1,5 +1,8 @@
 name: btfs CI
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [ 'master' ]
