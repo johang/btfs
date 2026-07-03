@@ -441,6 +441,7 @@ btfs_getattr(const char *path, struct stat *stbuf,
 
 	if (is_root(path) || is_dir(path)) {
 		stbuf->st_mode = S_IFDIR | 0755;
+		stbuf->st_nlink = 2;
 	} else {
 		auto ti = handle.torrent_file();
 
@@ -463,6 +464,7 @@ btfs_getattr(const char *path, struct stat *stbuf,
 		stbuf->st_blocks = progress[(size_t) files[path]] / 512;
 		stbuf->st_mode = S_IFREG | 0444;
 		stbuf->st_size = file_size;
+		stbuf->st_nlink = 1;
 	}
 
 	pthread_mutex_unlock(&lock);
