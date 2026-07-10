@@ -1,4 +1,4 @@
-EXTRACXXFLAGS = -std=c++14 \
+EXTRACXXFLAGS = -std=c++17 \
                 -Wall \
                 -Wextra \
                 -Wconversion \

@@ -86,7 +86,7 @@ static struct btfs_params params;
 static bool
 move_to_next_unfinished(int& piece, int num_pieces) {
 	for (; piece < num_pieces; piece++) {
-		if (!handle.have_piece(piece))
+		if (!handle.have_piece(libtorrent::piece_index_t{piece}))
 			return true;
 	}
 
@@ -105,7 +105,7 @@ jump(int piece, int size) {
 	cursor = tail;
 
 	for (int i = 0; i < 16; i++) {
-		handle.piece_priority(tail++, 7);
+		handle.piece_priority(libtorrent::piece_index_t{tail++}, libtorrent::download_priority_t{7});
 	}
 }
 
@@ -120,11 +120,11 @@ Read::Read(char *buf, int index, off_t offset, size_t size) {
 #if LIBTORRENT_VERSION_NUM < 10100
 	int64_t file_size = ti->file_at(index).size;
 #else
-	int64_t file_size = ti->files().file_size(index);
+	int64_t file_size = ti->files().file_size(libtorrent::file_index_t{index});
 #endif
 
 	while (size > 0 && offset < file_size) {
-		libtorrent::peer_request part = ti->map_file(index, offset,
+		libtorrent::peer_request part = ti->map_file(libtorrent::file_index_t{index}, offset,
 			(int) size);
 
 		part.length = std::min(
@@ -141,14 +141,14 @@ Read::Read(char *buf, int index, off_t offset, size_t size) {
 
 void Read::fail(int piece) {
 	for (parts_iter i = parts.begin(); i != parts.end(); ++i) {
-		if (i->part.piece == piece && !i->filled)
+		if (i->part.piece == libtorrent::piece_index_t{piece} && !i->filled)
 			failed = true;
 	}
 }
 
 void Read::copy(int piece, char *buffer, int size) {
 	for (parts_iter i = parts.begin(); i != parts.end(); ++i) {
-		if (i->part.piece == piece && !i->filled)
+		if (i->part.piece == libtorrent::piece_index_t{piece} && !i->filled)
 			i->filled = (memcpy(i->buf, buffer + i->part.start,
 				(size_t) i->part.length)) != NULL;
 	}
@@ -188,7 +188,7 @@ int Read::read() {
 	trigger();
 
 	// Move sliding window to first piece to serve this request
-	jump(parts.front().part.piece, size());
+	jump(static_cast<int>(parts.front().part.piece), size());
 
 	while (!finished() && !failed)
 		// Wait for any piece to downloaded
@@ -215,7 +215,7 @@ setup() {
 #if LIBTORRENT_VERSION_NUM < 10100
 		char *p = strdup(ti->file_at(i).path.c_str());
 #else
-		char *p = strdup(ti->files().file_path(i).c_str());
+		char *p = strdup(ti->files().file_path(libtorrent::file_index_t{i}).c_str());
 #endif
 
 		if (!p)
@@ -242,7 +242,7 @@ setup() {
 #if LIBTORRENT_VERSION_NUM < 10100
 		files["/" + ti->file_at(i).path] = i;
 #else
-		files["/" + ti->files().file_path(i)] = i;
+		files["/" + ti->files().file_path(libtorrent::file_index_t{i})] = i;
 #endif
 	}
 }
@@ -254,15 +254,15 @@ handle_read_piece_alert(libtorrent::read_piece_alert *a, Log *log) {
 
 	pthread_mutex_lock(&lock);
 
-	if (a->ec) {
+	if (a->error) {
 		*log << a->message() << std::endl;
 
 		for (reads_iter i = reads.begin(); i != reads.end(); ++i) {
-			(*i)->fail(a->piece);
+			(*i)->fail(static_cast<int>(a->piece));
 		}
 	} else {
 		for (reads_iter i = reads.begin(); i != reads.end(); ++i) {
-			(*i)->copy(a->piece, a->buffer.get(), a->size);
+			(*i)->copy(static_cast<int>(a->piece), a->buffer.get(), a->size);
 		}
 	}
 
@@ -289,7 +289,7 @@ handle_piece_finished_alert(libtorrent::piece_finished_alert *a, Log *log) {
 }
 
 static void
-handle_torrent_added_alert(libtorrent::torrent_added_alert *a, Log *log) {
+handle_torrent_added_alert(libtorrent::add_torrent_alert *a, Log *log) {
 	pthread_mutex_lock(&lock);
 
 	handle = a->handle;
@@ -329,10 +329,10 @@ handle_alert(libtorrent::alert *a, Log *log) {
 		handle_metadata_received_alert(
 			(libtorrent::metadata_received_alert *) a, log);
 		break;
-	case libtorrent::torrent_added_alert::alert_type:
+	case libtorrent::add_torrent_alert::alert_type:
 		*log << a->message() << std::endl;
 		handle_torrent_added_alert(
-			(libtorrent::torrent_added_alert *) a, log);
+			(libtorrent::add_torrent_alert *) a, log);
 		break;
 	case libtorrent::dht_bootstrap_alert::alert_type:
 		*log << a->message() << std::endl;
@@ -448,7 +448,7 @@ btfs_getattr(const char *path, struct stat *stbuf,
 #if LIBTORRENT_VERSION_NUM < 10100
 		int64_t file_size = ti->file_at(files[path]).size;
 #else
-		int64_t file_size = ti->files().file_size(files[path]);
+		int64_t file_size = ti->files().file_size(libtorrent::file_index_t{files[path]});
 #endif
 
 #if LIBTORRENT_VERSION_NUM < 10200
@@ -580,8 +580,11 @@ btfs_init(struct fuse_conn_info *conn,
 #else
 	libtorrent::session_flags_t flags =
 #endif
-		libtorrent::session::add_default_plugins |
-		libtorrent::session::start_default_features;
+		libtorrent::session::add_default_plugins
+#if LIBTORRENT_VERSION_NUM < 20100
+		| libtorrent::session::start_default_features
+#endif
+		;
 
 #if LIBTORRENT_VERSION_NUM < 10200
 	int alerts =
@@ -591,7 +594,11 @@ btfs_init(struct fuse_conn_info *conn,
 		libtorrent::alert::tracker_notification |
 		libtorrent::alert::stats_notification |
 		libtorrent::alert::storage_notification |
+#if LIBTORRENT_VERSION_NUM >= 20100
+		libtorrent::alert_category::piece_progress |
+#else
 		libtorrent::alert::progress_notification |
+#endif
 		libtorrent::alert::status_notification |
 		libtorrent::alert::error_notification |
 		libtorrent::alert::dht_notification |
