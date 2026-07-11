@@ -349,9 +349,6 @@ handle_alert(libtorrent::alert *a, Log *log) {
 	case libtorrent::lsd_peer_alert::alert_type:
 		*log << a->message() << std::endl;
 		break;
-	case libtorrent::stats_alert::alert_type:
-		//*log << a->message() << std::endl;
-		break;
 	default:
 		break;
 	}
@@ -577,32 +574,33 @@ btfs_init(struct fuse_conn_info *conn,
 
 #if LIBTORRENT_VERSION_NUM < 10200
 	int flags =
-#else
-	libtorrent::session_flags_t flags =
-#endif
 		libtorrent::session::add_default_plugins
 #if LIBTORRENT_VERSION_NUM < 20100
 		| libtorrent::session::start_default_features
 #endif
 		;
+#endif
 
 #if LIBTORRENT_VERSION_NUM < 10200
 	int alerts =
-#else
-	libtorrent::alert_category_t alerts =
-#endif
 		libtorrent::alert::tracker_notification |
 		libtorrent::alert::stats_notification |
 		libtorrent::alert::storage_notification |
-#if LIBTORRENT_VERSION_NUM >= 20100
-		libtorrent::alert_category::piece_progress |
-#else
 		libtorrent::alert::progress_notification |
-#endif
 		libtorrent::alert::status_notification |
 		libtorrent::alert::error_notification |
 		libtorrent::alert::dht_notification |
 		libtorrent::alert::peer_notification;
+#else
+	libtorrent::alert_category_t alerts =
+		libtorrent::alert_category::tracker |
+		libtorrent::alert_category::storage |
+		libtorrent::alert_category::piece_progress |
+		libtorrent::alert_category::status |
+		libtorrent::alert_category::error |
+		libtorrent::alert_category::dht |
+		libtorrent::alert_category::peer;
+#endif
 
 #if LIBTORRENT_VERSION_NUM < 10100
 	session = new libtorrent::session(
@@ -670,7 +668,7 @@ btfs_init(struct fuse_conn_info *conn,
 	pack.set_int(pack.upload_rate_limit, params.max_upload_rate * 1024);
 	pack.set_int(pack.alert_mask, alerts);
 
-	session = new libtorrent::session(pack, flags);
+	session = new libtorrent::session(pack);
 
 #if LIBTORRENT_VERSION_NUM < 10101
 	session->add_dht_router(std::make_pair("router.bittorrent.com", 6881));
