@@ -1,0 +1,22 @@
+version: "2.4"
+services:
+  btfs:
+    container_name: btfs
+    restart: unless-stopped
+    build: .
+    command:
+      - "-o"
+      - "allow_other"
+      - "--utp-only"
+      - "magnet:?xt=urn:btih:08ada5a7a6183aae1e09d831df6748d566095a10&dn=Sintel"
+      - "/mnt"
+    cap_add:
+      - ALL
+      - SYS_ADMIN
+    devices:
+      - /dev/fuse
+    privileged: true
+    security_opt:
+      - apparmor:unconfined
+    volumes:
+      - /tmp/btfs-docker/:/mnt/:shared
